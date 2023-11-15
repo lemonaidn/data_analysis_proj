@@ -42,34 +42,8 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Load the data from ProPublica.
 
-q4_2022 <- read_csv("data/2022Q4.csv")
-q3_2022 <- read_csv("data/2022Q3.csv")
-q2_2022 <- read_csv("data/2022Q2.csv")
-q1_2022 <- read_csv("data/2022Q1.csv")
 
-q4_2021 <- read_csv("data/2021Q4.csv")
-q3_2021 <- read_csv("data/2021Q3.csv")
-q2_2021 <- read_csv("data/2021Q2.csv")
-q1_2021 <- read_csv("data/2021Q1.csv")
-
-q4_2020 <- read_csv("data/2020Q4.csv")
-q3_2020 <- read_csv("data/2020Q3.csv")
-q2_2020 <- read_csv("data/2020Q2.csv")
-q1_2020 <- read_csv("data/2020Q1.csv")
-
-q4_2019 <- read_csv("data/2019Q4.csv")
-q3_2019 <- read_csv("data/2019Q3.csv")
-q2_2019 <- read_csv("data/2019Q2.csv")
-q1_2019 <- read_csv("data/2019Q1.csv")
-
-q4_2018 <- read_csv("data/2018Q4.csv")
-q3_2018 <- read_csv("data/2018Q3.csv")
-q2_2018 <- read_csv("data/2018Q2.csv")
-q1_2018 <- read_csv("data/2018Q1.csv")
-
-# Bind dataframes into one combined dataframe  
-
-house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
+# Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
 
 
 # Clean required data and prepare for analysis if needed. 
