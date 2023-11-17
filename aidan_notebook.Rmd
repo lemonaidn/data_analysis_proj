@@ -41,7 +41,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Load the data from ProPublica.
 
-# Watch out for "subtotal" rows -- need to filter those out when doing calculations to avoid doubing the real total
+# Watch out for "subtotal" rows -- need to filter those out when doing calculations to avoid doubling the real total
 
 # "Date" column seems to pertain to the date the expense was filed, whereas the start and end dates seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011
 
@@ -49,9 +49,10 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # QUARTER is sometimes unpopulated, sometimes populated with a numeric, and sometimes populated with a chr (eg "Q2" instead of just "2"). Calculate the quarter from DATE and re-populate the column before converting the type
 
-# DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't acually use it to extact quarter and year values. will need to do those steps manually for each df instead
+# DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't actually use it to extact quarter and year values. will need to do those steps manually for each df instead
 
 q4_2022 <- read_csv("data/2022Q4.csv")
+  
 # Need to remove the FY and LY from "FISCAL YEAR OR LEGISLATIVE YEAR" col
 
 q3_2022 <- read_csv("data/2022Q3.csv")
