@@ -52,23 +52,28 @@ In this section, describe the source of the data, write a basic data dictionary 
 # DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't actually use it to extract quarter and year values. easiest to do those steps manually for each df instead
 
 q4_2022 <- read_csv("data/2022Q4.csv") %>%
-  mutate(filing_year = 2022)
+  mutate(filing_year = 2022) %>%
+  clean_names()
   
 
 q3_2022 <- read_csv("data/2022Q3.csv") %>%
-  mutate(filing_year = 2022)
+  mutate(filing_year = 2022) %>%
+  clean_names()
 
 
 q2_2022 <- read_csv("data/2022Q2.csv") %>%
-  mutate(filing_year = 2022)
+  mutate(filing_year = 2022) %>%
+  clean_names()
 
 
 q1_2022 <- read_csv("data/2022Q1.csv")%>%
-  mutate(filing_year = 2022)
+  mutate(filing_year = 2022) %>%
+  clean_names()
 # Need to populate the QUARTER column
 
 q4_2021 <- read_csv("data/2021Q4.csv") %>%
-  mutate(filing_year = 2021)
+  mutate(filing_year = 2021) %>%
+  clean_names()
 # parsing errors in row 27712:
 # row   col expected        actual     file 
 #  <int> <int> <chr>           <chr>      <chr>
@@ -78,59 +83,81 @@ q4_2021 <- read_csv("data/2021Q4.csv") %>%
 # Need to populate the QUARTER column and change it from lgl to dbl
 
 q3_2021 <- read_csv("data/2021Q3.csv") %>%
-  mutate(filing_year = 2021)
+  mutate(filing_year = 2021) %>%
+  clean_names()
 
 q2_2021 <- read_csv("data/2021Q2.csv")%>%
-  mutate(filing_year = 2021)
+  mutate(filing_year = 2021) %>%
+  clean_names()
 # Need to populate the QUARTER column
 
 q1_2021 <- read_csv("data/2021Q1.csv")%>%
-  mutate(filing_year = 2021)
+  mutate(filing_year = 2021) %>%
+  clean_names()
 
 q4_2020 <- read_csv("data/2020Q4.csv")%>%
-  mutate(filing_year = 2020)
+  mutate(filing_year = 2020) %>%
+  clean_names()
 
 
 q3_2020 <- read_csv("data/2020Q3.csv")%>%
-  mutate(filing_year = 2020)
+  mutate(filing_year = 2020) %>%
+  clean_names()
 
 
 q2_2020 <- read_csv("data/2020Q2.csv")%>%
-  mutate(filing_year = 2020)
+  mutate(filing_year = 2020) %>%
+  clean_names()
 
 
 q1_2020 <- read_csv("data/2020Q1.csv")%>%
-  mutate(filing_year = 2020)
+  mutate(filing_year = 2020) %>%
+  clean_names()
 
 
 q4_2019 <- read_csv("data/2019Q4.csv")%>%
-  mutate(filing_year = 2019)
+  mutate(filing_year = 2019) %>%
+  clean_names()
 
 
 q3_2019 <- read_csv("data/2019Q3.csv")%>%
-  mutate(filing_year = 2019)
+  mutate(filing_year = 2019) %>%
+  clean_names()
 
 
 q2_2019 <- read_csv("data/2019Q2.csv")%>%
-  mutate(filing_year = 2019)
+  mutate(filing_year = 2019) %>%
+  clean_names()
 # QUARTER col is in format "Q2" rather than just "2"
 
 q1_2019 <- read_csv("data/2019Q1.csv")%>%
-  mutate(filing_year = 2019)
+  mutate(filing_year = 2019) %>%
+  clean_names()
 
 
 q4_2018 <- read_csv("data/2018Q4.csv")%>%
-  mutate(filing_year = 2018)
+  mutate(filing_year = 2018) %>%
+  clean_names()
 
 
 q3_2018 <- read_csv("data/2018Q3.csv")%>%
-  mutate(filing_year = 2018)
+  mutate(filing_year = 2018) %>%
+  clean_names()
 
 q2_2018 <- read_csv("data/2018Q2.csv")%>%
-  mutate(filing_year = 2018)
+  mutate(filing_year = 2018) %>%
+  clean_names()
 
 q1_2018 <- read_csv("data/2018Q1.csv")%>%
-  mutate(filing_year = 2018)
+  mutate(filing_year = 2018) %>%
+  clean_names()
+
+df_vec <- c(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018)
+
+for (df in df_vec) {
+  df <- df %>%
+    clean_names()
+}
 
 
 ```
