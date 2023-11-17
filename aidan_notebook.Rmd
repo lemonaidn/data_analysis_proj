@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction 
@@ -49,22 +49,26 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # QUARTER is sometimes unpopulated, sometimes populated with a numeric, and sometimes populated with a chr (eg "Q2" instead of just "2"). Calculate the quarter from DATE and re-populate the column before converting the type
 
-# DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't actually use it to extact quarter and year values. will need to do those steps manually for each df instead
+# DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't actually use it to extract quarter and year values. easiest to do those steps manually for each df instead
 
-q4_2022 <- read_csv("data/2022Q4.csv")
+q4_2022 <- read_csv("data/2022Q4.csv") %>%
+  mutate(filing_year = 2022)
   
-# Need to remove the FY and LY from "FISCAL YEAR OR LEGISLATIVE YEAR" col
 
-q3_2022 <- read_csv("data/2022Q3.csv")
-
-
-q2_2022 <- read_csv("data/2022Q2.csv")
+q3_2022 <- read_csv("data/2022Q3.csv") %>%
+  mutate(filing_year = 2022)
 
 
-q1_2022 <- read_csv("data/2022Q1.csv")
+q2_2022 <- read_csv("data/2022Q2.csv") %>%
+  mutate(filing_year = 2022)
+
+
+q1_2022 <- read_csv("data/2022Q1.csv")%>%
+  mutate(filing_year = 2022)
 # Need to populate the QUARTER column
 
-q4_2021 <- read_csv("data/2021Q4.csv")
+q4_2021 <- read_csv("data/2021Q4.csv") %>%
+  mutate(filing_year = 2021)
 # parsing errors in row 27712:
 # row   col expected        actual     file 
 #  <int> <int> <chr>           <chr>      <chr>
@@ -73,43 +77,60 @@ q4_2021 <- read_csv("data/2021Q4.csv")
 # These don't seem to have negatively impacted the data.
 # Need to populate the QUARTER column and change it from lgl to dbl
 
-q3_2021 <- read_csv("data/2021Q3.csv")
+q3_2021 <- read_csv("data/2021Q3.csv") %>%
+  mutate(filing_year = 2021)
 
-q2_2021 <- read_csv("data/2021Q2.csv")
+q2_2021 <- read_csv("data/2021Q2.csv")%>%
+  mutate(filing_year = 2021)
 # Need to populate the QUARTER column
 
-q1_2021 <- read_csv("data/2021Q1.csv")
+q1_2021 <- read_csv("data/2021Q1.csv")%>%
+  mutate(filing_year = 2021)
 
-q4_2020 <- read_csv("data/2020Q4.csv")
-
-
-q3_2020 <- read_csv("data/2020Q3.csv")
-
-
-q2_2020 <- read_csv("data/2020Q2.csv")
+q4_2020 <- read_csv("data/2020Q4.csv")%>%
+  mutate(filing_year = 2020)
 
 
-q1_2020 <- read_csv("data/2020Q1.csv")
+q3_2020 <- read_csv("data/2020Q3.csv")%>%
+  mutate(filing_year = 2020)
 
 
-q4_2019 <- read_csv("data/2019Q4.csv")
+q2_2020 <- read_csv("data/2020Q2.csv")%>%
+  mutate(filing_year = 2020)
 
 
-q3_2019 <- read_csv("data/2019Q3.csv")
+q1_2020 <- read_csv("data/2020Q1.csv")%>%
+  mutate(filing_year = 2020)
 
 
-q2_2019 <- read_csv("data/2019Q2.csv")
-# QUARTER col is informat "Q2" rather than just "2"
-
-q1_2019 <- read_csv("data/2019Q1.csv")
+q4_2019 <- read_csv("data/2019Q4.csv")%>%
+  mutate(filing_year = 2019)
 
 
-q4_2018 <- read_csv("data/2018Q4.csv")
+q3_2019 <- read_csv("data/2019Q3.csv")%>%
+  mutate(filing_year = 2019)
 
 
-q3_2018 <- read_csv("data/2018Q3.csv")
-q2_2018 <- read_csv("data/2018Q2.csv")
-q1_2018 <- read_csv("data/2018Q1.csv")
+q2_2019 <- read_csv("data/2019Q2.csv")%>%
+  mutate(filing_year = 2019)
+# QUARTER col is in format "Q2" rather than just "2"
+
+q1_2019 <- read_csv("data/2019Q1.csv")%>%
+  mutate(filing_year = 2019)
+
+
+q4_2018 <- read_csv("data/2018Q4.csv")%>%
+  mutate(filing_year = 2018)
+
+
+q3_2018 <- read_csv("data/2018Q3.csv")%>%
+  mutate(filing_year = 2018)
+
+q2_2018 <- read_csv("data/2018Q2.csv")%>%
+  mutate(filing_year = 2018)
+
+q1_2018 <- read_csv("data/2018Q1.csv")%>%
+  mutate(filing_year = 2018)
 
 
 ```
@@ -120,12 +141,12 @@ q1_2018 <- read_csv("data/2018Q1.csv")
 
 df_vec <- c(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018)
 
-chr_varis <- c(BIOGUIDE_ID, OFFICE, PROGRAM, CATEGORY, SORT SEQUENCE, TRANSCODE, RECORDID, PAYEE, PURPOSE)
+chr_col_vec <- c(BIOGUIDE_ID, OFFICE, PROGRAM, CATEGORY, SORT SEQUENCE, TRANSCODE, RECORDID, PAYEE, PURPOSE)
 
 for (df in df_vec) {
-  for (chr_vari in chr_varis) {
-    if (df$char_vari !is.character()) {
-      df$char_vari = as.character(df$char_vari)
+  for (chr_col in chr_col_vec) {
+    if (df$char_col !is.character()) {
+      df$char_col = as.character(df$char_vari)
     } 
   }
 }
