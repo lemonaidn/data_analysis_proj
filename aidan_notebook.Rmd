@@ -1,0 +1,208 @@
+---
+title: "Untitled"
+author: "Aidan Hughes"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction 
+
+For our data analysis project, we have chosen to look at House of Representatives Office Expenditures. We think that the dataset is rich with newsworthy details and we know that the public is generally interested in how lawmakers spend their tax dollars.
+
+
+## Load libraries
+
+Loading required libraries for this analysis.
+
+```{r echo=FALSE, message=FALSE}
+
+# Turn off scientific notation. 
+
+options(scipen=999)
+
+# Load libraries. 
+
+library(tidyverse)
+library(readr)
+library(scales)
+library(janitor)
+
+```
+
+## Load and Cleaning Data
+
+In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data. 
+
+```{r}
+
+# Load the data from ProPublica.
+
+# Watch out for "subtotal" rows -- need to filter those out when doing calculations to avoid doubing the real total
+
+# "Date" column seems to pertain to the date the expense was filed, whereas the start and end dates seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011
+
+# YEAR is not always populated. When it is, it seems to pertain to the filing year rather than the expense year. Let's update the column name to say filing year and make sure it's always populated. We can extract the value from the DATE column
+
+# QUARTER is sometimes unpopulated, sometimes populated with a numeric, and sometimes populated with a chr (eg "Q2" instead of just "2"). Calculate the quarter from DATE and re-populate the column before converting the type
+
+# DATE col values aren't always populated (some rows are and some rows aren't within the same df). can't acually use it to extact quarter and year values. will need to do those steps manually for each df instead
+
+q4_2022 <- read_csv("data/2022Q4.csv")
+# Need to remove the FY and LY from "FISCAL YEAR OR LEGISLATIVE YEAR" col
+
+q3_2022 <- read_csv("data/2022Q3.csv")
+
+
+q2_2022 <- read_csv("data/2022Q2.csv")
+
+
+q1_2022 <- read_csv("data/2022Q1.csv")
+# Need to populate the QUARTER column
+
+q4_2021 <- read_csv("data/2021Q4.csv")
+# parsing errors in row 27712:
+# row   col expected        actual     file 
+#  <int> <int> <chr>           <chr>      <chr>
+#1 27712    12 date in ISO8601 4-Jul-21   ""   
+#2 27712    14 15 columns      14 columns ""
+# These don't seem to have negatively impacted the data.
+# Need to populate the QUARTER column and change it from lgl to dbl
+
+q3_2021 <- read_csv("data/2021Q3.csv")
+
+q2_2021 <- read_csv("data/2021Q2.csv")
+# Need to populate the QUARTER column
+
+q1_2021 <- read_csv("data/2021Q1.csv")
+
+q4_2020 <- read_csv("data/2020Q4.csv")
+
+
+q3_2020 <- read_csv("data/2020Q3.csv")
+
+
+q2_2020 <- read_csv("data/2020Q2.csv")
+
+
+q1_2020 <- read_csv("data/2020Q1.csv")
+
+
+q4_2019 <- read_csv("data/2019Q4.csv")
+
+
+q3_2019 <- read_csv("data/2019Q3.csv")
+
+
+q2_2019 <- read_csv("data/2019Q2.csv")
+# QUARTER col is informat "Q2" rather than just "2"
+
+q1_2019 <- read_csv("data/2019Q1.csv")
+
+
+q4_2018 <- read_csv("data/2018Q4.csv")
+
+
+q3_2018 <- read_csv("data/2018Q3.csv")
+q2_2018 <- read_csv("data/2018Q2.csv")
+q1_2018 <- read_csv("data/2018Q1.csv")
+
+
+```
+
+```{r}
+
+# Clean required data and prepare for analysis if needed. 
+
+df_vec <- c(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018)
+
+chr_varis <- c(BIOGUIDE_ID, OFFICE, PROGRAM, CATEGORY, SORT SEQUENCE, TRANSCODE, RECORDID, PAYEE, PURPOSE)
+
+for (df in df_vec) {
+  for (chr_vari in chr_varis) {
+    if (df$char_vari !is.character()) {
+      df$char_vari = as.character(df$char_vari)
+    } 
+  }
+}
+
+
+```
+
+
+```{r}
+
+# Bind dataframes into one combined dataframe  
+
+house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
+
+```
+
+
+
+## Sentences to Engineer
+In this notebook, we are reverse engineering five sentences from the story.
+
+### Sentence 1
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 2
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 3
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 4
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 5
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
