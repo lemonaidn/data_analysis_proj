@@ -41,7 +41,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Load the data from ProPublica.
 
-# Watch out for "subtotal" rows -- need to filter those out when doing calculations to avoid doubling the real total
+# In the sort_sequence row, we will ONLY be using "SUBTOTAL" rows, filtering out specific expenses (DETAIL) and GRAND TOTAL FOR ORGANIZATION so that the dataset is small enough to be agile and does not have redundancies that will adversely impact the math we're looking to do. 
 
 # "DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011
 
@@ -220,6 +220,16 @@ q1_2018 <- read_csv("data/2018Q1.csv")%>%
 
 house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
 
+# Number of rows is 2,185,315
+ 
+unique(house_spend_18_23$sort_sequence)
+
+# Filter out all rows that include a specific expense (DETAIL) or a GRAND TOTAL, so that we are only looking at SUBTOTALS per expense category. 
+
+house_spend_18_23 <- house_spend_18_23 |>
+  filter(sort_sequence != "DETAIL")|> 
+  filter(sort_sequence != "GRAND TOTAL FOR ORGANIZATION") 
+
 ```
 
 # Bring in ProPublica's Congress API
@@ -227,11 +237,11 @@ house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021,
 In this section, we installed the "ppcong" package in order to get information on individual members of the House of Representatives.
 
 ```{r}
-# Install necessary packages (skip this step if packages have been previously installed)
+# Install necessary packages (remove # if libraries are needed)
 
-remotes::install_github("mkearney/dapr")
-remotes::install_github("mkearney/tfse")
-remotes::install_github("mkearney/ppcong")
+#remotes::install_github("mkearney/dapr")
+#remotes::install_github("mkearney/tfse")
+#remotes::install_github("mkearney/ppcong")
 
 # Load ppcong library 
 
@@ -268,7 +278,7 @@ cleaned_members_18_22 <- members_18_22 |>
   mutate(first_name = str_to_upper(first_name))|>  
   mutate(last_name = str_to_upper(last_name))
 
-#Join the member information with our expenses dataset using the bioguide id
+# Join the member information with our expenses dataset using the bioguide id
 spend_with_member_info <- house_spend_18_23 |> 
   left_join(cleaned_members_18_22, by = c("bioguide_id" = "id"))
 
@@ -295,66 +305,82 @@ When the amount is negative, what does that signify?
 - THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO AN -800K RECORD WILL APPEAR.
 
 
-## Sentences to Engineer
-In this notebook, we are reverse engineering five sentences from the story.
+### Question 1
 
-### Sentence 1
+* **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
 
-* **Sentence text**: [Paste in sentence to engineer here]
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 2
+### Question 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Which political party does the most spending, and does that change with whether or not that party holds the majority in the House?
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 3
+### Question 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 4
+### Question 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Which offices in the House are spending the least annually? There may be an interesting story behind lawmakers who have shown restraint in spending their budgets compared to colleagues.
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 5
+### Question 5
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Has staff pay kept on pace with wage growth nation-wide? The Federal Times has reported on this question, but we think it would be well-suited for data visualization.
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
+### Memo 
+
+This story memo should pitch a story idea derived primarily from your analysis of the data, including a discussion of what you found that was newsworthy when you analyzed the data, how the data could be used to develop the story, and what additional steps would be needed to complete the reporting of this story.
+The story memo should be written as if you were trying to get the attention of a very busy editor and convince that editor to give you the opportunity to pursue a story you believe is suggested by your analysis.
+The final story memo should include the following:
+A strong statement at the top. Write this as if I am your editor and you are competing for my attention with reporters pitching other story ideas. That is, don’t start by saying, “I sat down and launched R and looked at the database and sorted it 10 different ways.” Tell me right up front what you found that was interesting or what you found that suggests a dynamite story. Tell me how your most newsworthy findings relate to what you found in your research about prior uses of similar data for stories elsewhere. Do not pitch your findings for more than they are worth, however, or make assertions not supported by your work.
+A summary of the results of your analysis. Describe results that are germane to the main thrust of the story you are pitching and, if appropriate, relevant results that suggest other interesting avenues to explore. Indicate whether your findings are new or whether they present a local angle for similar findings reported elsewhere.
+Pros and cons of the data. Discuss both the strengths and limitations of the data.
+How you would verify your findings. Identify the specific reporting and data steps would you take and the types of information you would use to determine whether the results of your analysis are accurate and significant. If your analysis suggests fault or issues of accountability on the part of public or private figures, indicate whom you would need to contact for response to ensure that your reporting was fair and accurate.
+Bringing it home. Indicate the specific steps you would need to take to finish reporting the story. Include the people you would contact and, if relevant, the places you would visit. Indicate how you would make the story real to readers.
+Editors are not interested in process. Don’t fill the memo with what steps you took.
