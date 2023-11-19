@@ -51,7 +51,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # DATE col values aren't always populated (within the same df some rows are and some rows aren't). Can't use it to extract quarter and year values.
 
-# Cleaned datatypes in columns one-by-one while exploring the distinct issues across different quarters. We will make this more concise in the near future by using regex and a for loop to iterate across a list of dfs and make the year and quarter updates. We'll then only need to apply additional fixes to q4_2022, q4_2021, q1_2020 and q3_2018. 
+# Cleaned datatypes in columns one-by-one while exploring the distinct issues across different quarters. We will make this more concise in the near future by using regex and a for loop to iterate across a list of dfs and make the year and quarter updates. We'll then only need to apply additional fixes to q4_2022, q4_2021, and q3_2018. 
 
 q4_2022 <- read_csv("data/2022Q4.csv") %>%
   mutate(YEAR = as.numeric(2022)) %>%
@@ -278,10 +278,61 @@ cleaned_members_18_22 <- members_18_22 |>
   mutate(first_name = str_to_upper(first_name))|>  
   mutate(last_name = str_to_upper(last_name))
 
+```
+
+
+```{r}
 # Join the member information with our expenses dataset using the bioguide id
 spend_with_member_info <- house_spend_18_23 |> 
   left_join(cleaned_members_18_22, by = c("bioguide_id" = "id"))
+```
 
+Getting a many-to-many issue. Let's try to find the source
+
+```{r}
+
+cleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+
+```
+
+Let's check a few examples from the list above to see why there are duplicates
+
+A000367 - Justin Amash switched from R to I which is why he's showing up twice
+B001296 - Brendan Boyle switched districts which is why he's showing up twice
+C001090 - MATT CARTWRIGHT switched districts which is why he's showing up twice
+D000482 - MIKE DOYLE switched districts which is why he's showing up twice
+
+Let's remove districts from the ppcong data before removing dupes. We shouldn't need districts to answer the questions we're pursuing for this project. Hopefully that'll only leave us with Amash showing up twice.
+
+
+```{r}
+recleaned_members_18_22 <- members_18_22 |> 
+  select(id, first_name, last_name, gender, party, state) |> 
+  distinct()|> 
+  mutate(first_name = str_to_upper(first_name))|>  
+  mutate(last_name = str_to_upper(last_name))
+```
+
+
+```{r}
+recleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+```
+
+M001201 - PAUL MITCHELL switched from R to I with a few weeks left in his term in Dec 2020
+V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
+
+Much of our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other This means we can redo the join now without worrying about the remaining many-to-many issues for questions that pertain specifically to DMV reps. If we need to include any national-level analyses we'll reapproach those records then. (Maybe re-code their party as "M" for "multiple" throughout their tenures in the House?)
+
+```{r}
+# Join the member information with our expenses dataset using the bioguide id
+spend_with_member_info <- house_spend_18_23 |> 
+  left_join(recleaned_members_18_22, by = c("bioguide_id" = "id"))
 ```
 
 Data dictionary questions:
@@ -289,7 +340,7 @@ Data dictionary questions:
 "DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011.
 
   - Confirm "DATE" is filing date - CONFIRMED
-  - Why does q4_2019 have expenses that go back all the way to 2011? - SOMETIMES A MEMBER'S OFFICE WILL REALIZE THERE WAS A BOOKEEPING ERROR EVEN FURTHER BACK THAN THE THREE YEAR LIMIT MENTIONED IN THE PROPUBLICA ARTICLE. OTHER TIMES, A VENDOR WILL IDENTIFY A BOOKEEPING ERROR FROM YEARS PRRIOR ON THEIR END AND NOTIFY THE MEMBER'S OFFICE ABOUT IT, AND THEN THE MEMBER'S OFFICE WILL UPDATE THEIR BOOKS TOO
+  - Why does q4_2019 have expenses that go back all the way to 2011? - SOMETIMES A MEMBER'S OFFICE WILL REALIZE THERE WAS A BOOKEEPING ERROR EVEN FURTHER BACK THAN THE THREE YEAR LIMIT MENTIONED IN THE PROPUBLICA ARTICLE. OTHER TIMES, A VENDOR WILL IDENTIFY A BOOKEEPING ERROR FROM YEARS PRIOR ON THEIR END AND NOTIFY THE MEMBER'S OFFICE ABOUT IT, AND THEN THE MEMBER'S OFFICE WILL UPDATE THEIR BOOKS TOO
 
 YEAR seems to pertain to the filing year rather than the expense year.
 
@@ -302,7 +353,7 @@ The start and end date cols seem to pertain to the dates of the expenses themsel
   
 When the amount is negative, what does that signify?
 
-- THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO AN -800K RECORD WILL APPEAR.
+- THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO A -800K RECORD WILL APPEAR.
 
 
 ### Question 1
