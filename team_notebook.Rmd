@@ -224,11 +224,11 @@ house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021,
  
 unique(house_spend_18_23$sort_sequence)
 
-# Filter out all rows that include a specific expense (DETAIL) or a GRAND TOTAL, so that we are only looking at SUBTOTALS per expense category. 
+# Filter out all rows that pertain to totals/subtotals (easy for us to recalculate if needed, and this way we're not unintentionally doubling the true #'s of our findings when doing aggregations)
 
 house_spend_18_23 <- house_spend_18_23 |>
-  filter(sort_sequence != "DETAIL")|> 
-  filter(sort_sequence != "GRAND TOTAL FOR ORGANIZATION") 
+  filter(sort_sequence != "GRAND TOTAL FOR ORGANIZATION")|> 
+  filter(sort_sequence != "SUBTOTAL") 
 
 ```
 
@@ -327,13 +327,17 @@ recleaned_members_18_22 %>%
 M001201 - PAUL MITCHELL switched from R to I with a few weeks left in his term in Dec 2020
 V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
 
-Much of our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other This means we can redo the join now without worrying about the remaining many-to-many issues for questions that pertain specifically to DMV reps. If we need to include any national-level analyses we'll reapproach those records then. (Maybe re-code their party as "M" for "multiple" throughout their tenures in the House?)
+Our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other states. This means we can redo the join now without worrying about the remaining many-to-many issues they're causing since those rows will get filtered out right afterwards
 
 ```{r}
 # Join the member information with our expenses dataset using the bioguide id
-spend_with_member_info <- house_spend_18_23 |> 
-  left_join(recleaned_members_18_22, by = c("bioguide_id" = "id"))
+# Also add a step so we're only looking at DMV representatives
+dmv_spend_with_member_info <- house_spend_18_23 |> 
+  left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
+  filter(state == "DC" | state == "VA" | state == "MD")
 ```
+
+
 
 Data dictionary questions:
 
@@ -354,6 +358,116 @@ The start and end date cols seem to pertain to the dates of the expenses themsel
 When the amount is negative, what does that signify?
 
 - THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO A -800K RECORD WILL APPEAR.
+
+## Deliverable 2:
+
+# Loads and cleans the core data set to prepare for analysis.
+
+- Done (see above)
+
+Shows basic exploratory analysis to demonstrate an understanding of the dataset, including the number of rows and columns, any obvious limitations or flaws and any reasons why it might not be able to answer the questions you've posed last week.
+
+- Done, see code below. Note: we need to have a better understanding of how the categories of spending are/aren't populated in the "category" and "sort_subtotal_description" cols. There's a frustrating number of NAs in those cols. "Purpose" is more consistently populated but is also more granular than we'd like, and we'd probably have to do our own manual grouping/categorization from this list of almost 500 purposes to do some of our analyses. We'll have to discuss as a team whether there's a better way to go about that.
+
+```{r}
+# glimpse of the cleaned data set
+
+glimpse(dmv_spend_with_member_info)
+
+```
+
+
+
+```{r}
+# Records per category
+
+dmv_spend_with_member_info %>%
+  group_by(category) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
+
+```{r}
+# check the amount spent per category
+
+dmv_spend_with_member_info %>%
+  group_by(category) %>%
+  summarise(total_expenses = sum(amount)) %>%
+  arrange(desc(total_expenses))
+```
+
+```{r}
+# that's a lot of uncategorized (NA) expenses. Let's take a look at some of them and see if we can glean any more information
+
+dmv_spend_with_member_info %>%
+  filter(is.na(category)) %>%
+  arrange(desc(amount))
+
+```
+
+```{r}
+# the "category" column might not be the best one to use to understand the category of the expenses. Lets try again using sort_subtotal_description instead
+
+# Records per sort_subtotal_description
+
+dmv_spend_with_member_info %>%
+  group_by(sort_subtotal_description) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+```
+
+```{r}
+# that's even worse. what about the "purpose" column?
+
+# Records per purpose
+
+dmv_spend_with_member_info %>%
+  group_by(purpose) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# this is much more consistently populated, but it's also way more granular than I'd like for the purposes of our analyses
+```
+
+```{r}
+# How many distinct Republican and Democrat reps are in our data?
+
+dmv_spend_with_member_info %>%
+  group_by(bioguide_id, party, last_name, first_name) %>%
+  summarise() %>%
+  filter(party == "R")
+
+# 11 Republicans
+
+```
+
+```{r}
+dmv_spend_with_member_info %>%
+  group_by(bioguide_id, party, last_name, first_name) %>%
+  summarise() %>%
+  filter(party == "D")
+
+# 17 Democrats
+```
+
+```{r}
+# What are the top individual expenses in our data?
+
+dmv_spend_with_member_info %>%
+  arrange(desc(amount))
+
+# The second through tenth largest individual expenses are for franked mail and frankable printing & reprod
+
+# The very top indeivdual expense was a nearly 100k maintenance/repair project in 2018 (reported in 2019) from Eleanor Jolmes Norton's office
+
+# 5 of the 10 largest indv. expenses are from Donald Breyer's office
+```
+
+
+Describe the limits of the data in terms of timeframe, what is and is not included and any codes or other information you'd need to find definitions for, and what you've done to better define it.
+
+- Because members can report expenses late (in some cases, years later), it's very possible that we don't actually have all of the expenses that occurred during the years we're interested in. The expenditure data for Q1 2023 had an "id" column separate from the bioguide_ID column and it's unclear what that pertains to. We likely don't need it for our analyses though. Better definitions or a data dictionary for columns like "budget object class" and "budget object code" would be helpful, but we might not need that information for our analyses either. We have already done work to better-define the various date columns present in the data (detailed earlier in this notebook) and to understand the records with negative amount values.
 
 
 ### Question 1
