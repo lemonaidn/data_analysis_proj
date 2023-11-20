@@ -33,6 +33,8 @@ library(janitor)
 
 ```
 
+### FOR AYA, AIDEN, CALEY: TO SKIP CLEAN PROCESS AND WORK WITH totals_dmv_spend, use search function to look for "POST-CLEAN" and start there.  
+
 ## Load and Cleaning Data
 
 In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data. 
@@ -333,20 +335,15 @@ dmv_spend_with_member_info <- house_spend_18_23 |>
   left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
   filter(state == "DC" | state == "VA" | state == "MD")
 
-# create a dmv_df that's only the details
-
-details_dmv_spend <- dmv_spend_with_member_info %>%
-  filter(sort_sequence != "GRAND TOTAL FOR ORGANIZATION")|> 
-  filter(sort_sequence != "SUBTOTAL") 
-
-# create a dmv_df that's only the totals/subtotals
+# create a dmv_df that's only the subtotals
   
 totals_dmv_spend <- dmv_spend_with_member_info %>%
-  filter(sort_sequence == sort_sequence == "SUBTOTAL") 
+  filter(sort_sequence == "SUBTOTAL") 
   
+# write this dataframe into a csv in order to skip the cleaning process moving forward 
+write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
+
 ```
-
-
 
 Data dictionary questions:
 
@@ -378,10 +375,20 @@ When the amount is negative, what does that signify?
 
 - Done, see code below. Note: we need to have a better understanding of how the categories of spending are/aren't populated in the "category" and "sort_subtotal_description" cols. There's a frustrating number of NAs in those cols. "Purpose" is more consistently populated but is also more granular than we'd like, and we'd probably have to do our own manual grouping/categorization from this list of almost 500 purposes to do some of our analyses. We'll have to discuss as a team whether there's a better way to go about that.
 
+##### POST-CLEAN |  START FROM HERE TO SKIP CLEANING PROCESS WITH FRESH DATAFRAME (R WILL RUN FASTER :)) #### 
+
+```{r}
+
+# Read in the data for spending of DMV reps. 
+
+totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
+
+```
+
 ```{r}
 # glimpse of the cleaned details data set
 
-glimpse(details_dmv_spend)
+glimpse(totals_dmv_spend)
 
 ```
 
@@ -390,19 +397,66 @@ glimpse(details_dmv_spend)
 ```{r}
 # Records per category
 
-details_dmv_spend %>%
-  group_by(category) %>%
+totals_dmv_spend %>%
+  group_by(purpose) %>%
   summarise(count = n()) %>%
   arrange(desc(count))
+
 ```
 
-```{r}
-# check the amount spent per category
 
-details_dmv_spend %>%
-  group_by(category) %>%
+```{r}
+
+# Let's look at the spending categories (column is called purpose) to get a general sense of where reps are using their budgets. 
+
+totals_dmv_spend_purpose <- totals_dmv_spend %>%
+  group_by(purpose) %>%
   summarise(total_expenses = sum(amount)) %>%
   arrange(desc(total_expenses))
+
+# OFFICIAL EXPENSES OF MEMBER TOTALS sounds really vague, and it's the top number by far with a spend of $135,333,002.69. We also notice that Official Expenses of Members is one of the two options for the program column in totals_dmv_spend. That seems like a red flag. 
+
+# The other value in the program column is INTERN ALLOWANCES. We have a column in totals_dmv_spend_purpose called INTERN ALLOWANCES TOTALS: as well, which totals 1532417.41
+
+# Are these two values in the purpose category totally redundant? Let's save these numbers, then filter the two rows out and see if they equal the sum of all other purposes that remain. 
+
+official <- 135333002.69
+interns <- 1532417.41
+
+totals_dmv_spend_purpose <- totals_dmv_spend %>%
+  filter(purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS:")|> 
+  filter(purpose != "INTERN ALLOWANCES TOTALS:")|> 
+  group_by(purpose) %>%
+  summarise(total_expenses = sum(amount)) %>%
+  arrange(desc(total_expenses))
+
+# What's the sum of all of the remaining 9 categories? Does it equal the sum of OFFICIAL EXPENSES OF MEMBER TOTALS and INTERN ALLOWANCES? 
+
+totals_dmv_spend_purpose |> 
+  summarise(total = sum(total_expenses))
+
+without_official_interns <- 136865420	
+
+remainder <- (without_official_interns - official - interns)
+
+remainder
+
+# I am not sure why we have $0.10 left over. Upon manually checking the math for the without_official_interns figure, it was actually #136,865,420.10. So we're good! 
+
+# Let's make this same change in the totals_dmv_spend so that we are permanently excluding these redundancies when working with that dataframe. 
+
+totals_dmv_spend <- totals_dmv_spend %>%
+  filter(purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS:")|> 
+  filter(purpose != "INTERN ALLOWANCES TOTALS:")
+
+# Just double checking that now we have only the appropriate 9 options for purpose. 
+
+totals_dmv_spend %>%
+  group_by(purpose)|> 
+  summarise()
+
+# Good to go! 
+
 ```
 
 ```{r}
