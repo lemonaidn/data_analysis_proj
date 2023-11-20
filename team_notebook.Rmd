@@ -342,7 +342,7 @@ details_dmv_spend <- dmv_spend_with_member_info %>%
 # create a dmv_df that's only the totals/subtotals
   
 totals_dmv_spend <- dmv_spend_with_member_info %>%
-  filter(sort_sequence == "GRAND TOTAL FOR ORGANIZATION" | sort_sequence == "SUBTOTAL") 
+  filter(sort_sequence == sort_sequence == "SUBTOTAL") 
   
 ```
 
