@@ -33,7 +33,7 @@ library(janitor)
 
 ```
 
-### FOR AYA, AIDEN, CALEY: TO SKIP CLEAN PROCESS AND WORK WITH totals_dmv_spend, use search function to look for "POST-CLEAN" and start there.  
+### TO SKIP CLEAN PROCESS AND WORK WITH totals_dmv_spend, use search function to look for "POST-CLEAN" and start there.  
 
 ## Load and Cleaning Data
 
@@ -380,8 +380,6 @@ When the amount is negative, what does that signify?
 
 - Because members can report expenses late (in some cases, years later), it's very possible that we don't actually have all of the expenses that occurred during the years we're interested in. The expenditure data for Q1 2023 had an "id" column separate from the bioguide_ID column and it's unclear what that pertains to. We likely don't need it for our analyses though. Better definitions or a data dictionary for columns like "budget object class" and "budget object code" would be helpful, but we might not need that information for our analyses either. We have already done work to better-define the various date columns present in the data (detailed earlier in this notebook) and to understand the records with negative amount values.
 
-
-
 ##### POST-CLEAN |  START FROM HERE TO SKIP CLEANING PROCESS WITH FRESH DATAFRAME (R WILL RUN FASTER :)) #### 
 
 ```{r}
@@ -468,6 +466,7 @@ totals_dmv_spend %>%
 
 
 ```{r}
+
 # What are the top individual expenses in our data?
 
 totals_dmv_spend |> 
@@ -486,6 +485,7 @@ totals_dmv_spend |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
+
 # Put code to here
 
 # Display results of code below this codeblock
@@ -500,6 +500,7 @@ totals_dmv_spend |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
+
 # First we needed to do a little research about who controlled the House from 2018-2022. It was Republicans in 2018 and Democrats every other year, so we made a simple spreadsheet to import. Let's do that now. 
 
 house_majority <- read_csv("data/house_majority.csv")
@@ -518,10 +519,7 @@ totals_dmv_spend |>
 
 # Aha! So it looks like Democrats are generally spending more every year, with the exception of 2020 which may be an outlier for many reasons. But Republicans spend the most in 2018, the year they were in the majority. 
 
-# 
-
-
-# Are there more Dems or Reps over the 5 years? 
+# But are there more Dems or Reps over the 5 years? 
 
 totals_dmv_spend |> 
   group_by(bioguide_id, party, last_name, first_name) |> 
@@ -533,12 +531,9 @@ totals_dmv_spend |>
   summarise() |> 
   filter(party == "R")
 
-# There have been 17 Democrats representing the DMV over the past 5 years, in addition to 11 Republicans.
+# There have been 17 Democrats representing the DMV over the past 5 years, in addition to 11 Republicans. Now let's look at average spend for a rep per party to compare if individual Democrats spend more than individual Republicans. 
 
-totals_dmv_spend |> 
-  group_by(office, party)|> 
-  summarise(count = n())|> 
-  arrange(office)
+## I GOT STUCK THINKING ABOUT THIS ONE SORRY! 
 
 ```
 
@@ -563,9 +558,20 @@ totals_dmv_spend |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to here
 
-# Display results of code below this codeblock
+# Create a new column that sums an offices expenses into a total sum.  
+
+totals_dmv_spend <- totals_dmv_spend |> 
+  group_by(office, year)|> 
+  mutate(office_total = sum(amount))
+
+# Arrange to see which office spent the least over a year. 
+
+ totals_dmv_spend |> 
+  group_by(office, year, office_total)|> 
+   arrange(office_total)
+ 
+ ## WHY ARE MY GROUP BYS NOT WORKING :( 
 
 ```
 
