@@ -1,18 +1,18 @@
 ---
-title: "Untitled"
-author: "Aidan Hughes"
+title: "Data Anaylisis Team 3 Notebook"
+author: "Aidan Hughes, Aya Hussein, Caley Fox Shannon"
 date: "`r Sys.Date()`"
 output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction 
 
 For our data analysis project, we have chosen to look at House of Representatives Office Expenditures. We think that the dataset is rich with newsworthy details and we know that the public is generally interested in how lawmakers spend their tax dollars.
-
 
 ## Load libraries
 
@@ -41,7 +41,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Load the data from ProPublica.
 
-# Watch out for "subtotal" rows -- need to filter those out when doing calculations to avoid doubling the real total
+# In the sort_sequence row, we will ONLY be using "SUBTOTAL" rows, filtering out specific expenses (DETAIL) and GRAND TOTAL FOR ORGANIZATION so that the dataset is small enough to be agile and does not have redundancies that will adversely impact the math we're looking to do. 
 
 # "DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011
 
@@ -49,7 +49,9 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # QUARTER is sometimes unpopulated, sometimes populated with a numeric, and sometimes populated with a chr (eg "Q2" instead of just "2").
 
-# DATE col values aren't always populated (within the same df, some rows are and some rows aren't). can't actually use it to extract quarter and year values. easiest to do those steps manually for each df instead
+# DATE col values aren't always populated (within the same df some rows are and some rows aren't). Can't use it to extract quarter and year values.
+
+# Cleaned datatypes in columns one-by-one while exploring the distinct issues across different quarters. We will make this more concise in the near future by using regex and a for loop to iterate across a list of dfs and make the year and quarter updates. We'll then only need to apply additional fixes to q4_2022, q4_2021, and q3_2018. 
 
 q4_2022 <- read_csv("data/2022Q4.csv") %>%
   mutate(YEAR = as.numeric(2022)) %>%
@@ -209,31 +211,7 @@ q1_2018 <- read_csv("data/2018Q1.csv")%>%
   clean_names() %>%
   mutate(quarter = as.numeric("1"))
 
-
 ```
-
-
-
-
-
-IGNORE THIS FOR NOW (eventually going to use for loops and if statements to make some of the above steps more concise):
-
-```{r}
-# 
-# 
-# df_list <- list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018)
-# 
-# 
-# 
-# for (df in df_vec) {
-#   for (chr_col in chr_col_vec) {
-#     if (df$char_col !is.character()) {
-#       df$char_col = as.character(df$char_vari)
-#     } 
-#   }
-# }
-
-
 
 
 ```{r}
@@ -242,90 +220,344 @@ IGNORE THIS FOR NOW (eventually going to use for loops and if statements to make
 
 house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
 
+# Number of rows is 2,185,315
+ 
+unique(house_spend_18_23$sort_sequence)
+
+
+house_spend_18_23 <- house_spend_18_23
+
 ```
 
+# Bring in ProPublica's Congress API
 
-
-IGNORE THIS FOR NOW:
+In this section, we installed the "ppcong" package in order to get information on individual members of the House of Representatives.
 
 ```{r}
-# 
-# 
-# df_list <- list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018)
-# 
-# 
-# 
-# for (df in df_vec) {
-#   for (chr_col in chr_col_vec) {
-#     if (df$char_col !is.character()) {
-#       df$char_col = as.character(df$char_vari)
-#     } 
-#   }
-# }
+# Install necessary packages (remove # if libraries are needed)
+
+#remotes::install_github("mkearney/dapr")
+#remotes::install_github("mkearney/tfse")
+#remotes::install_github("mkearney/ppcong")
+
+# Load ppcong library 
+
+library(ppcong)
+
+## Save API key for use in ppcong. Data in parentheses can be replaced by another individual API key. 
+
+ppc_api_key("yosRYPlksfSYRNTfhgot3bNTzvYQNZ8ztredZ7da", set_renv = TRUE) #this is Aya's api key
+
+# Bring in information on House members for the 115th, 116th and 117th congresses, which cover from January 2017 to January 2023, as our expenditure dataset covers 2018 to 2022.
+
+h115 <- ppc_members(congress = "115", chamber = "house")
+h116 <- ppc_members(congress = "116", chamber = "house")
+h117 <- ppc_members(congress = "117", chamber = "house")
+```
+
+# Bind API dataframes 
+
+We bound the three API datasets that consist of members of the House from the last three Congresses to get one large dataset that consists of all of them. Then, we cleaned the dataset to only include the columns we need, which are id, names, gender, party, state and district.
+
+This dataset included some duplicates due to certain members serving on more than one Congress. To address this, we used the "distinct" function.
+
+Then, we joined our Expenses dataset with the cleaned House members dataset.
+
+```{r}
+
+# Bind dataframes from the three Congresses
+members_18_22 <- bind_rows(list(h115, h116, h117))
+
+# Select the columns that we need and then get rid of any duplicates
+cleaned_members_18_22 <- members_18_22 |> 
+  select(id, first_name, last_name, gender, party, state, district) |> 
+  distinct()|> 
+  mutate(first_name = str_to_upper(first_name))|>  
+  mutate(last_name = str_to_upper(last_name))
+
+```
+
+
+```{r}
+# Join the member information with our expenses dataset using the bioguide id
+spend_with_member_info <- house_spend_18_23 |> 
+  left_join(cleaned_members_18_22, by = c("bioguide_id" = "id"))
+```
+
+Getting a many-to-many issue. Let's try to find the source
+
+```{r}
+
+cleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+
+```
+
+Let's check a few examples from the list above to see why there are duplicates
+
+A000367 - Justin Amash switched from R to I which is why he's showing up twice
+B001296 - Brendan Boyle switched districts which is why he's showing up twice
+C001090 - MATT CARTWRIGHT switched districts which is why he's showing up twice
+D000482 - MIKE DOYLE switched districts which is why he's showing up twice
+
+Let's remove districts from the ppcong data before removing dupes. We shouldn't need districts to answer the questions we're pursuing for this project. Hopefully that'll only leave us with Amash showing up twice.
+
+
+```{r}
+recleaned_members_18_22 <- members_18_22 |> 
+  select(id, first_name, last_name, gender, party, state) |> 
+  distinct()|> 
+  mutate(first_name = str_to_upper(first_name))|>  
+  mutate(last_name = str_to_upper(last_name))
+```
+
+
+```{r}
+recleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+```
+
+M001201 - PAUL MITCHELL switched from R to I with a few weeks left in his term in Dec 2020
+V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
+
+Our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other states. This means we can redo the join now without worrying about the remaining many-to-many issues they're causing since those rows will get filtered out right afterwards
+
+```{r}
+# Join the member information with our expenses dataset using the bioguide id
+# Also add a step so we're only looking at DMV representatives
+dmv_spend_with_member_info <- house_spend_18_23 |> 
+  left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
+  filter(state == "DC" | state == "VA" | state == "MD")
+
+# create a dmv_df that's only the details
+
+details_dmv_spend <- dmv_spend_with_member_info %>%
+  filter(sort_sequence != "GRAND TOTAL FOR ORGANIZATION")|> 
+  filter(sort_sequence != "SUBTOTAL") 
+
+# create a dmv_df that's only the totals/subtotals
+  
+totals_dmv_spend <- dmv_spend_with_member_info %>%
+  filter(sort_sequence == "SUBTOTAL") 
+  
 ```
 
 
 
-## Sentences to Engineer
-In this notebook, we are reverse engineering five sentences from the story.
+Data dictionary questions:
 
-### Sentence 1
+"DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011.
 
-* **Sentence text**: [Paste in sentence to engineer here]
+  - Confirm "DATE" is filing date - CONFIRMED
+  - Why does q4_2019 have expenses that go back all the way to 2011? - SOMETIMES A MEMBER'S OFFICE WILL REALIZE THERE WAS A BOOKEEPING ERROR EVEN FURTHER BACK THAN THE THREE YEAR LIMIT MENTIONED IN THE PROPUBLICA ARTICLE. OTHER TIMES, A VENDOR WILL IDENTIFY A BOOKEEPING ERROR FROM YEARS PRIOR ON THEIR END AND NOTIFY THE MEMBER'S OFFICE ABOUT IT, AND THEN THE MEMBER'S OFFICE WILL UPDATE THEIR BOOKS TOO
+
+YEAR seems to pertain to the filing year rather than the expense year.
+
+  - Confirm? - CONFIRMED
+
+
+The start and end date cols seem to pertain to the dates of the expenses themselves.
+
+  - Confirm? - CONFIRMED
+  
+When the amount is negative, what does that signify?
+
+- THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELLED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO A -800K RECORD WILL APPEAR.
+
+## Deliverable 2:
+
+# Loads and cleans the core data set to prepare for analysis.
+
+- Done (see above)
+
+# Shows basic exploratory analysis to demonstrate an understanding of the dataset, including the number of rows and columns, any obvious limitations or flaws and any reasons why it might not be able to answer the questions you've posed last week.
+
+- Done, see code below. Note: we need to have a better understanding of how the categories of spending are/aren't populated in the "category" and "sort_subtotal_description" cols. There's a frustrating number of NAs in those cols. "Purpose" is more consistently populated but is also more granular than we'd like, and we'd probably have to do our own manual grouping/categorization from this list of almost 500 purposes to do some of our analyses. We'll have to discuss as a team whether there's a better way to go about that.
+
+```{r}
+# glimpse of the cleaned details data set
+
+glimpse(details_dmv_spend)
+
+```
+
+
+
+```{r}
+# Records per category
+
+details_dmv_spend %>%
+  group_by(category) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
+
+```{r}
+# check the amount spent per category
+
+details_dmv_spend %>%
+  group_by(category) %>%
+  summarise(total_expenses = sum(amount)) %>%
+  arrange(desc(total_expenses))
+```
+
+```{r}
+# that's a lot of uncategorized (NA) expenses. Let's take a look at some of them and see if we can glean any more information
+
+details_dmv_spend %>%
+  filter(is.na(category)) %>%
+  arrange(desc(amount))
+
+```
+
+```{r}
+# the "category" column might not be the best one to use to understand the category of the expenses. Lets try again using sort_subtotal_description instead
+
+# Records per sort_subtotal_description
+
+details_dmv_spend %>%
+  group_by(sort_subtotal_description) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+```
+
+```{r}
+# that's even worse. what about the "purpose" column?
+
+# Records per purpose
+
+details_dmv_spend %>%
+  group_by(purpose) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# this is much more consistently populated, but it's also way more granular than I'd like for the purposes of our analyses
+```
+
+```{r}
+# How many distinct Republican and Democrat reps are in our data?
+
+details_dmv_spend %>%
+  group_by(bioguide_id, party, last_name, first_name) %>%
+  summarise() %>%
+  filter(party == "R")
+
+# 11 Republicans
+
+```
+
+```{r}
+details_dmv_spend %>%
+  group_by(bioguide_id, party, last_name, first_name) %>%
+  summarise() %>%
+  filter(party == "D")
+
+# 17 Democrats
+```
+
+```{r}
+# What are the top individual expenses in our data?
+
+details_dmv_spend %>%
+  arrange(desc(amount))
+
+# The second through tenth largest individual expenses are for franked mail and frankable printing & reprod
+
+# The very top individual expense was a nearly 100k maintenance/repair project in 2018 (reported in 2019) from Eleanor Holmes Norton's office
+
+# 5 of the 10 largest indv. expenses are from Donald Breyer's office
+```
+
+
+# Describe the limits of the data in terms of timeframe, what is and is not included and any codes or other information you'd need to find definitions for, and what you've done to better define it.
+
+- Because members can report expenses late (in some cases, years later), it's very possible that we don't actually have all of the expenses that occurred during the years we're interested in. The expenditure data for Q1 2023 had an "id" column separate from the bioguide_ID column and it's unclear what that pertains to. We likely don't need it for our analyses though. Better definitions or a data dictionary for columns like "budget object class" and "budget object code" would be helpful, but we might not need that information for our analyses either. We have already done work to better-define the various date columns present in the data (detailed earlier in this notebook) and to understand the records with negative amount values.
+
+
+### Question 1
+
+* **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# For this question we actually will need the expenditure data for all members, not just DMV reps, to get an annual average we can compare to the DMV reps' average
+
+
+
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 2
+### Question 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Which political party does the most spending, and does that change with whether or not that party holds the majority in the House?
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 3
+### Question 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 4
+### Question 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Which offices in the House are spending the least annually? There may be an interesting story behind lawmakers who have shown restraint in spending their budgets compared to colleagues.
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
-### Sentence 5
+### Question 5
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Question**: Has staff pay kept on pace with wage growth nation-wide? The Federal Times has reported on this question, but we think it would be well-suited for data visualization.
+
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
+# Put code to here
 
 # Display results of code below this codeblock
 
 ```
 
+### Memo 
+
+This story memo should pitch a story idea derived primarily from your analysis of the data, including a discussion of what you found that was newsworthy when you analyzed the data, how the data could be used to develop the story, and what additional steps would be needed to complete the reporting of this story.
+The story memo should be written as if you were trying to get the attention of a very busy editor and convince that editor to give you the opportunity to pursue a story you believe is suggested by your analysis.
+The final story memo should include the following:
+A strong statement at the top. Write this as if I am your editor and you are competing for my attention with reporters pitching other story ideas. That is, don’t start by saying, “I sat down and launched R and looked at the database and sorted it 10 different ways.” Tell me right up front what you found that was interesting or what you found that suggests a dynamite story. Tell me how your most newsworthy findings relate to what you found in your research about prior uses of similar data for stories elsewhere. Do not pitch your findings for more than they are worth, however, or make assertions not supported by your work.
+A summary of the results of your analysis. Describe results that are germane to the main thrust of the story you are pitching and, if appropriate, relevant results that suggest other interesting avenues to explore. Indicate whether your findings are new or whether they present a local angle for similar findings reported elsewhere.
+Pros and cons of the data. Discuss both the strengths and limitations of the data.
+How you would verify your findings. Identify the specific reporting and data steps would you take and the types of information you would use to determine whether the results of your analysis are accurate and significant. If your analysis suggests fault or issues of accountability on the part of public or private figures, indicate whom you would need to contact for response to ensure that your reporting was fair and accurate.
+Bringing it home. Indicate the specific steps you would need to take to finish reporting the story. Include the people you would contact and, if relevant, the places you would visit. Indicate how you would make the story real to readers.
+Editors are not interested in process. Don’t fill the memo with what steps you took.
