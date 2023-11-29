@@ -556,9 +556,41 @@ avg_spend_dmv <- avg_spend_dmv |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to here
+# Since there isn't a specific date column, we need to go by year. 2020 and 2021 were the main COVID years.
 
-# Display results of code below this codeblock
+# We need to look at total spending of each category by year:
+
+category_by_year <- totals_dmv_spend |> 
+  group_by(year, category) |> 
+  summarize(total_spend = sum(amount)) |> 
+  drop_na()
+
+category_by_year
+
+# It's really hard to compare the amounts by just looking at the table. A visualization would greatly help with comparing the different categories:
+
+category_by_year |> 
+  ggplot() +
+  geom_bar(aes(x=category, weight=total_spend))+
+  coord_flip()+
+  facet_wrap(~year) +
+  labs(x="Year",
+       y="Amount Spent")
+
+category_by_year |> 
+  ggplot() +
+  geom_bar(aes(x=year, weight=total_spend))+
+  coord_flip()+
+  facet_wrap(~category) +
+  labs(x="Year",
+       y="Amount Spent")
+
+category_by_year |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  facet_wrap(~category) +
+  labs(x="Year",
+       y="Amount Spent")
 
 ```
 
