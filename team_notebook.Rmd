@@ -618,26 +618,84 @@ category_by_year
 
 category_by_year |> 
   ggplot() +
-  geom_bar(aes(x=category, weight=total_spend))+
-  coord_flip()+
-  facet_wrap(~year) +
-  labs(x="Year",
-       y="Amount Spent")
-
-category_by_year |> 
-  ggplot() +
-  geom_bar(aes(x=year, weight=total_spend))+
-  coord_flip()+
-  facet_wrap(~category) +
-  labs(x="Year",
-       y="Amount Spent")
-
-category_by_year |> 
-  ggplot() +
   geom_line(aes(x=year, y=total_spend))+
   facet_wrap(~category) +
   labs(x="Year",
        y="Amount Spent")
+
+# The scales being the same doesn't work, so separating them is the best way to compare.
+
+category_by_year |> 
+  filter(category == "PERSONNEL COMPENSATION") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PERSONNEL COMPENSATION",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "EQUIPMENT") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="EQUIPMENT",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "FRANKED MAIL") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="FRANKED MAIL",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "OTHER SERVICES") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="OTHER SERVICES",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "PRINTING AND REPRODUCTION") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PRINTING AND REPRODUCTION",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "RENT  COMMUNICATION  UTILITIES") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="RENT COMMUNICATION UTILITIES",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "SUPPLIES AND MATERIALS") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="SUPPLIES AND MATERIALS",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "TRAVEL") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="TRAVEL",
+       caption="source: ProPublica")
 
 ```
 

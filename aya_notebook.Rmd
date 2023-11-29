@@ -570,28 +570,12 @@ category_by_year
 
 category_by_year |> 
   ggplot() +
-  geom_bar(aes(x=category, weight=total_spend))+
-  coord_flip()+
-  facet_wrap(~year) +
-  labs(x="Year",
-       y="Amount Spent")
-
-category_by_year |> 
-  ggplot() +
-  geom_bar(aes(x=year, weight=total_spend))+
-  coord_flip()+
-  facet_wrap(~category) +
-  labs(x="Year",
-       y="Amount Spent")
-
-category_by_year |> 
-  ggplot() +
   geom_line(aes(x=year, y=total_spend))+
   facet_wrap(~category) +
   labs(x="Year",
        y="Amount Spent")
 
-########
+# The scales being the same doesn't work, so separating them is the best way to compare.
 
 category_by_year |> 
   filter(category == "PERSONNEL COMPENSATION") |> 
