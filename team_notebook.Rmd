@@ -543,64 +543,12 @@ party_spending_w_rep_numbers <- party_spending_annual %>%
 party_spending_w_rep_numbers
 ```
 
-
-
-```{r}
-
-# Which political party in the DMV does the most spending? does that change with whether or not that party holds the majority in the House?
-
-totals_dmv_spend |> 
-  group_by(party, year, majority_party)|> 
-  summarise(party_spend = sum(amount))|> 
-  arrange(desc(party_spend))
-
-# It looks like Democrats are generally spending more every year, with the exception of 2020 which may be an outlier because of the pandemic. But Republicans spent the most in 2018, the year they were in the majority. Otherwise the Republican spending trends similarly to Democrats (2022 followed by 2020, 2021, 2019).  
-
-# So that answers the second part of our question. It looks like parties in power will spend more than normal. But let's also look a the spend proportionally. Are there more Dems or Reps over the 5 years? 
-
-totals_dmv_spend |> 
-  group_by(bioguide_id, party, last_name, first_name) |> 
-  summarise() |> 
-  filter(party == "D")
-
-totals_dmv_spend |> 
-  group_by(bioguide_id, party, last_name, first_name) |> 
-  summarise() |> 
-  filter(party == "R")
-
-# There have been 17 Democrats representing the DMV over the past 5 years, in addition to 11 Republicans. Now let's look at average spend for a rep per year per party to compare if individual Democrats spend more than individual Republicans. 
-
-#avg_spend_dmv <- totals_dmv_spend |> 
- # group_by(bioguide_id, last_name, first_name, party, year) |> 
- # mutate(total_spend = sum(amount))|> 
- # mutate (years_in_office = count(year))
-
-
-# I feel like group_by is not doing what I need it to and I'm still seeing a bunch of columns I don't want. Also the count() function I maybe made up because it's not working. I asked ChaptGPT and it said this is another way to do that: 
-
-selected_columns <- c("bioguide_id", "last_name", "first_name", "party", "year", "majority_party", "purpose", "state", "amount")
-
-avg_spend_dmv <- totals_dmv_spend |> 
-  select(all_of(selected_columns))
-
-avg_spend_dmv <- avg_spend_dmv |> 
-  group_by(bioguide_id) |> 
-  mutate(total_spend = sum(amount))|> 
-  mutate(years_in_office = n_distinct(year))|> 
-  mutate(yearly_spend = (total_spend/years_in_office))|> 
-  unique()
-
-# WHY IS GROUP_BY NOT WORKING!!!! I STILL HAVE A ROW FOR EVERY PURPOSE, WHEN I JUST WANT A ROW FOR EVERY REP (BIOGUIDE ID). WHAT THE FUDGE. 
-
-
-
-```
-
 ### Question 3
 
 * **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
 
 ```{r}
 # Since there isn't a specific date column, we need to go by year. 2020 and 2021 were the main COVID years.
