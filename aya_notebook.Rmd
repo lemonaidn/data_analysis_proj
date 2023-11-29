@@ -384,7 +384,8 @@ When the amount is negative, what does that signify?
 
 # Read in the data for spending of DMV reps. 
 
-totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
+totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv") |> 
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
 
 ```
 
@@ -590,6 +591,80 @@ category_by_year |>
   labs(x="Year",
        y="Amount Spent")
 
+########
+
+category_by_year |> 
+  filter(category == "PERSONNEL COMPENSATION") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PERSONNEL COMPENSATION",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "EQUIPMENT") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="EQUIPMENT",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "FRANKED MAIL") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="FRANKED MAIL",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "OTHER SERVICES") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="OTHER SERVICES",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "PRINTING AND REPRODUCTION") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PRINTING AND REPRODUCTION",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "RENT  COMMUNICATION  UTILITIES") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="RENT COMMUNICATION UTILITIES",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "SUPPLIES AND MATERIALS") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="SUPPLIES AND MATERIALS",
+       caption="source: ProPublica")
+
+category_by_year |> 
+  filter(category == "TRAVEL") |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="TRAVEL",
+       caption="source: ProPublica")
+
 ```
 
 ### Question 4
@@ -603,15 +678,21 @@ category_by_year |>
 
 # Create a new column that sums an offices expenses into a total sum.  
 
-totals_dmv_spend <- totals_dmv_spend |> 
-  group_by(office, year)|> 
-  mutate(office_total = sum(amount))
+totals_dmv_spend_offt <- totals_dmv_spend |> 
+  group_by(last_name, first_name, year)|> 
+  summarise(office_total = sum(amount)) |> 
+  arrange(desc(office_total))
+totals_dmv_spend_offt
+
+totals_dmv_spend |> 
+  filter(last_name == "CUMMINGS" & first_name == "ELIJAH" & year == "2020") |> 
+  group_by(year) |> 
+  summarise(office_total = sum (amount))
 
 # Arrange to see which office spent the least over a year. 
 
- totals_dmv_spend |> 
-  group_by(office, year, office_total)|> 
-   arrange(office_total)
+totals_dmv_spend |> 
+  filter()
  
  ## WHY ARE MY GROUP BYS NOT WORKING :( 
 
