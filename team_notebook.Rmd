@@ -605,17 +605,30 @@ category_by_year |>
 
 # Create a new column that sums an offices expenses into a total sum.  
 
-totals_dmv_spend <- totals_dmv_spend |> 
-  group_by(office, year)|> 
-  mutate(office_total = sum(amount))
+spend_by_office <- totals_dmv_spend |> 
+  group_by(last_name, first_name, year)|> 
+  summarise(office_total = sum(amount))
 
 # Arrange to see which office spent the least over a year. 
 
- totals_dmv_spend |> 
-  group_by(office, year, office_total)|> 
+spend_by_office |> 
    arrange(office_total)
  
- ## WHY ARE MY GROUP BYS NOT WORKING :( 
+ ## Elijah Cummings spend -$900.00 in 2021. Let's look at this spending overall to see if his office was reimbursed for a major contract of something. 
+
+totals_dmv_spend |> 
+  filter(last_name == "CUMMINGS" & first_name == "ELIJAH")|> 
+  group_by(year)|> 
+  summarise(office_total = sum(amount))|> 
+  arrange(year)
+
+# That's interesting. He spent a over two million dollars in 2018-2019, and less thatn $25K in the following 2 years. Let's look at his spending by category. 
+
+totals_dmv_spend |> 
+  filter(last_name == "CUMMINGS" & first_name == "ELIJAH" & year == "2021")
+
+# WELL WELL WELL. Elijah Cummings died in 2019. Yet his office had expenses in 2020 & 2021. We think that this is because of the delayed filing of expenses, as we can see inf the "office" column that the office was 2019 Hon. Elijah E. Cummings. 
+
 
 ```
 
