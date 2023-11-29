@@ -537,8 +537,8 @@ party_spending_annual
 party_spending_w_rep_numbers <- party_spending_annual %>%
   left_join(members_grouped_per_year) %>%
   mutate(avg_spend_per_member = party_spend / party_members_per_year) %>%
-  arrange(office_year) %>%
-  filter(office_year >=2018)
+  filter(office_year >=2018)  %>%
+  arrange(desc(avg_spend_per_member)) 
 
 party_spending_w_rep_numbers
 ```
