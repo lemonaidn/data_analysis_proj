@@ -227,7 +227,8 @@ house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021,
 unique(house_spend_18_23$sort_sequence)
 
 
-house_spend_18_23 <- house_spend_18_23
+house_spend_18_23 <- house_spend_18_23 %>%
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", house_spend_18_23$office)))
 
 ```
 
@@ -338,7 +339,8 @@ dmv_spend_with_member_info <- house_spend_18_23 |>
 # create a dmv_df that's only the subtotals
   
 totals_dmv_spend <- dmv_spend_with_member_info %>%
-  filter(sort_sequence == "SUBTOTAL") 
+  filter(sort_sequence == "SUBTOTAL") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
   
 # write this dataframe into a csv in order to skip the cleaning process moving forward 
 write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
@@ -490,7 +492,6 @@ totals_dmv_spend |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-
 # First we needed to do a little research about who controlled the House from 2018-2022. It was Republicans in 2018 and Democrats every other year, so we made a simple spreadsheet to import. Let's do that now. 
 
 house_majority <- read_csv("data/house_majority.csv")
@@ -498,7 +499,53 @@ house_majority <- read_csv("data/house_majority.csv")
 # Join with the totals_dmv_spend dataframe 
 
 totals_dmv_spend <- totals_dmv_spend |> 
-  left_join(house_majority, join_by(year))
+  left_join(house_majority, join_by("office_year" == "year"))
+
+totals_dmv_spend
+```
+
+```{r}
+
+all_members_per_year <- totals_dmv_spend %>%
+  group_by(office_year,bioguide_id,party) %>%
+  summarise()
+
+all_members_per_year
+```
+
+```{r}
+members_grouped_per_year <- all_members_per_year %>%
+  group_by(party, office_year) %>%
+  summarise(party_members_per_year = n()) %>%
+  filter(office_year >= 2017) %>%
+  arrange(office_year)
+
+members_grouped_per_year
+```
+
+```{r}
+party_spending_annual <- totals_dmv_spend |>
+  group_by(party, office_year, majority_party)|>
+  summarise(party_spend = sum(amount))|>
+  arrange(desc(party_spend)) %>%
+  arrange(office_year)
+
+party_spending_annual
+```
+
+```{r}
+party_spending_w_rep_numbers <- party_spending_annual %>%
+  left_join(members_grouped_per_year) %>%
+  mutate(avg_spend_per_member = party_spend / party_members_per_year) %>%
+  arrange(office_year) %>%
+  filter(office_year >=2018)
+
+party_spending_w_rep_numbers
+```
+
+
+
+```{r}
 
 # Which political party in the DMV does the most spending? does that change with whether or not that party holds the majority in the House?
 
