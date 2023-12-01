@@ -692,6 +692,7 @@ totals_dmv_spend |>
 ```{r}
 # Put code to here
 
+# Line graph with two lines, personal compensation
 # Display results of code below this codeblock
 
 ```
