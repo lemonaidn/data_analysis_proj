@@ -686,7 +686,8 @@ party_spending_w_rep_numbers
 # We need to look at total spending of each category by year:
 
 category_by_year <- totals_dmv_spend |> 
-  group_by(year, category) |> 
+  filter(office_year >= 2018, office_year <= 2022)|> 
+  group_by(office_year, purpose) |> 
   summarize(total_spend = sum(amount)) |> 
   drop_na()
 
@@ -696,84 +697,87 @@ category_by_year
 
 category_by_year |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
-  facet_wrap(~category) +
+  geom_line(aes(x=office_year, y=total_spend))+
+  facet_wrap(~purpose) +
   labs(x="Year",
        y="Amount Spent")
 
 # The scales being the same doesn't work, so separating them is the best way to compare.
 
 category_by_year |> 
-  filter(category == "PERSONNEL COMPENSATION") |> 
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="PERSONNEL COMPENSATION",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "EQUIPMENT") |> 
+  filter(purpose == "EQUIPMENT TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="EQUIPMENT",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "FRANKED MAIL") |> 
+  filter(purpose == "FRANKED MAIL TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="FRANKED MAIL",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "OTHER SERVICES") |> 
+  filter(purpose == "OTHER SERVICES TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="OTHER SERVICES",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "PRINTING AND REPRODUCTION") |> 
+  filter(purpose == "PRINTING AND REPRODUCTION TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="PRINTING AND REPRODUCTION",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "RENT  COMMUNICATION  UTILITIES") |> 
+  filter(purpose == "RENT  COMMUNICATION  UTILITIES TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="RENT COMMUNICATION UTILITIES",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "SUPPLIES AND MATERIALS") |> 
+  filter(purpose == "SUPPLIES AND MATERIALS TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="SUPPLIES AND MATERIALS",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "TRAVEL") |> 
+  filter(purpose == "TRAVEL TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="TRAVEL",
        caption="source: ProPublica")
+
+# Maybe an overlay of all of the above in Datawrapper would be the best way to look at this. We will explore that for the next milestone.
+
 
 ```
 

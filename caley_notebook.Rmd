@@ -394,9 +394,6 @@ When the amount is negative, what does that signify?
 - Because members can report expenses late (in some cases, years later), it's very possible that we don't actually have all of the expenses that occurred during the years we're interested in. The expenditure data for Q1 2023 had an "id" column separate from the bioguide_ID column and it's unclear what that pertains to. We likely don't need it for our analyses though. Better definitions or a data dictionary for columns like "budget object class" and "budget object code" would be helpful, but we might not need that information for our analyses either. We have already done work to better-define the various date columns present in the data (detailed earlier in this notebook) and to understand the records with negative amount values.
 
 ##### POST-CLEAN |  START FROM HERE TO SKIP CLEANING PROCESS WITH FRESH DATAFRAME (R WILL RUN FASTER :)) #### 
-```{r}
-
-```
 
 ## Load in cleaned data. 
 
@@ -484,10 +481,10 @@ totals_dmv_spend_purpose <- totals_dmv_spend_purpose |>
 
 * **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: We found that compared to the average in Congress, reps from the DMV spend $15,254.09 less per member each year. We also looked at their travel spending, and found that they spent on average $32,870.38 less annually per year. That means they probably outspend their peers in some other categories, but at least they spend less overall as we expected. 
+
 
 ```{r}
-
 # Read back in data for house spend. 
 
 house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
@@ -501,9 +498,13 @@ house_spend_18_22 <- house_spend_18_22 |>
 house_spend_18_22 
 ```
 
+
 ```{r}
 # Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
 
+house_spend_18_22 <- house_spend_18_22 %>%
+  filter(!is.na(bioguide_id))
+
 house_spend_18_22 %>%
   filter(office_year >= 2018) %>%
   group_by(office_year, bioguide_id) %>%
@@ -511,30 +512,16 @@ house_spend_18_22 %>%
   group_by(office_year) %>%
   summarise(count = n())
 
-
-# Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. There's also randomly a member for 2023. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
+# Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
 
 house_spend_18_22_totals <- house_spend_18_22 %>%
-  filter(office_year<=2022)|> 
-  group_by(office_year) %>%
+  group_by(year) %>%
   summarise(annual_total = sum(amount)) %>%
   mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
   mutate(annual_avg_per_member = annual_total / members_per_year)
+
+house_spend_18_22_totals 
   
-house_spend_18_22_totals
-
-
-
-house_spend_18_22 %>%
-14 hours ago
-
-house_spend_18_22
-  filter(office_year >= 2018) %>%
-  group_by(office_year, bioguide_id) %>%
-  summarise() %>%
-  group_by(office_year) %>%
-  summarise(count = n())
-
 ```
 
 ```{r}
@@ -557,7 +544,7 @@ totals_dmv_spend_totals
 ```
 
 ```{r}
-# Now let's join to compare side by side. 
+# Now join to compare side by side. 
 
 house_dmv_totals <- house_spend_18_22_totals |> 
   left_join(totals_dmv_spend_totals, join_by(year))
@@ -568,18 +555,17 @@ house_dmv_totals <- house_dmv_totals |>
   group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
   summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
 
-house_dmv_totals
-
 average_total_difference <- mean(house_dmv_totals$difference)
 
 average_total_difference 
 
-# So on average, DMV reps spent less every year than the House as a whole did, on average $3,576,305 less per member each year.
+# So on average, DMV reps spent less every year than the House as a whole did, on average $15,254.09 less per member each year. 
 ```
 
 
 ```{r}
-# Now let's use the same process to test the hypothesis that they probably spend less on transportation than other members do. 
+
+# Now let's test the hypothesis that DMV REPS probably spend less on transportation than other members do. 
 
 house_spend_18_22_travel <- house_spend_18_22 %>%
   filter(purpose == "TRAVEL TOTALS:") %>%
@@ -615,7 +601,7 @@ average_difference <- mean(house_dmv_travel$difference)
 
 average_difference
 
-# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $38,658.13 less annually per member. 
+# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. But they only spend ~$15.2K less than others overall, meaning that they are overspending somewhere else. 
 
 ```
 
@@ -700,7 +686,8 @@ party_spending_w_rep_numbers
 # We need to look at total spending of each category by year:
 
 category_by_year <- totals_dmv_spend |> 
-  group_by(year, category) |> 
+  filter(office_year >= 2018, office_year <= 2022)|> 
+  group_by(office_year, purpose) |> 
   summarize(total_spend = sum(amount)) |> 
   drop_na()
 
@@ -710,84 +697,86 @@ category_by_year
 
 category_by_year |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
-  facet_wrap(~category) +
+  geom_line(aes(x=office_year, y=total_spend))+
+  facet_wrap(~purpose) +
   labs(x="Year",
        y="Amount Spent")
 
 # The scales being the same doesn't work, so separating them is the best way to compare.
 
 category_by_year |> 
-  filter(category == "PERSONNEL COMPENSATION") |> 
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="PERSONNEL COMPENSATION",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "EQUIPMENT") |> 
+  filter(purpose == "EQUIPMENT TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="EQUIPMENT",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "FRANKED MAIL") |> 
+  filter(purpose == "FRANKED MAIL TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="FRANKED MAIL",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "OTHER SERVICES") |> 
+  filter(purpose == "OTHER SERVICES TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="OTHER SERVICES",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "PRINTING AND REPRODUCTION") |> 
+  filter(purpose == "PRINTING AND REPRODUCTION TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="PRINTING AND REPRODUCTION",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "RENT  COMMUNICATION  UTILITIES") |> 
+  filter(purpose == "RENT  COMMUNICATION  UTILITIES TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="RENT COMMUNICATION UTILITIES",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "SUPPLIES AND MATERIALS") |> 
+  filter(purpose == "SUPPLIES AND MATERIALS TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="SUPPLIES AND MATERIALS",
        caption="source: ProPublica")
 
 category_by_year |> 
-  filter(category == "TRAVEL") |> 
+  filter(purpose == "TRAVEL TOTALS:") |> 
   ggplot() +
-  geom_line(aes(x=year, y=total_spend))+
+  geom_line(aes(x=office_year, y=total_spend))+
   labs(x="Year",
        y="Amount Spent",
        title="TRAVEL",
        caption="source: ProPublica")
+
+# Maybe an overlay in Datawrapper would be the best way to look at this. We will explore that for the next milestone.
 
 ```
 
@@ -796,8 +785,9 @@ category_by_year |>
 * **Question**: Let's get a sense of the high highs and low lows. What are the biggest expenses for DMV reps? Who is the most frugal spender? 
 
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, her staffers made at a total of $573,977.80. 
 
+As for the lowest annual spender in the DMV, it appears at first blush to be Kweisi Mfume of Maryland, who spent $729,418.30 in 2020. That's basically a quarter million les than even the next lowest annual spend, which was Donald Beyer's $986,166.50 in 2018. But wait! A Google search tells us that Mfume was sworn in on May 5, 2020, after a special election for the seat of the late Rep. Elijah Cummings. So the honor in fact goes to Rep Don Beyer of Virginia after all. 
 
 ## What are the highest expenses in the dataset? 
 
@@ -808,8 +798,6 @@ category_by_year |>
 totals_dmv_spend |> 
   group_by(last_name, first_name, purpose, amount)|> 
   arrange(desc(amount))
-
-# We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, someone in her office made $573,977.80. HOLY SMOKES. That's a pretty penny and might be a story all by itself. Donald McEachin, another Democrat from VA, also paid a staff member more than half a million dollars last year. I'd guess these would be for Chief of Staff positions, but that needs to be verified. Shame on them! Go work in the private sector if you want to get rich off the backs of the 99%. 
 
 ```
 
@@ -829,7 +817,7 @@ spend_by_office <- totals_dmv_spend |>
 spend_by_office |> 
    arrange(office_total)
  
-# Kweisi Mfume spent $729,418.30 in 2020. Way to go, man. 
+
 
 ```
 
