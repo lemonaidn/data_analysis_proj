@@ -854,14 +854,10 @@ staff_plus_national |>
 
 ```
 
-### Memo 
+### Memo as of Saturday December 2nd. 
 
-This story memo should pitch a story idea derived primarily from your analysis of the data, including a discussion of what you found that was newsworthy when you analyzed the data, how the data could be used to develop the story, and what additional steps would be needed to complete the reporting of this story.
-The story memo should be written as if you were trying to get the attention of a very busy editor and convince that editor to give you the opportunity to pursue a story you believe is suggested by your analysis.
-The final story memo should include the following:
-A strong statement at the top. Write this as if I am your editor and you are competing for my attention with reporters pitching other story ideas. That is, don’t start by saying, “I sat down and launched R and looked at the database and sorted it 10 different ways.” Tell me right up front what you found that was interesting or what you found that suggests a dynamite story. Tell me how your most newsworthy findings relate to what you found in your research about prior uses of similar data for stories elsewhere. Do not pitch your findings for more than they are worth, however, or make assertions not supported by your work.
-A summary of the results of your analysis. Describe results that are germane to the main thrust of the story you are pitching and, if appropriate, relevant results that suggest other interesting avenues to explore. Indicate whether your findings are new or whether they present a local angle for similar findings reported elsewhere.
-Pros and cons of the data. Discuss both the strengths and limitations of the data.
-How you would verify your findings. Identify the specific reporting and data steps would you take and the types of information you would use to determine whether the results of your analysis are accurate and significant. If your analysis suggests fault or issues of accountability on the part of public or private figures, indicate whom you would need to contact for response to ensure that your reporting was fair and accurate.
-Bringing it home. Indicate the specific steps you would need to take to finish reporting the story. Include the people you would contact and, if relevant, the places you would visit. Indicate how you would make the story real to readers.
-Editors are not interested in process. Don’t fill the memo with what steps you took.
+Hey Derek! We've been having a time with this dataset. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a dataset that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office. 
+
+We're also struggling right now with figuring out the average compensation for congressional staffers. Not every staffer was paid throughout the duration of an office year, we imagine people come and go all the time. But that's making it very difficult to figure out an average salary when we don't know how many staff members to divide it by. We thought about just looking at a percent change in staff salaries year over year and comparing that to national trends in wage growth. However that would have a big presumption that the level of staffing has stayed constant and offices have not grown. 
+
+This is a real pain to deal with, it's almost like Congress wants us to stay out of it! 
