@@ -482,9 +482,7 @@ totals_dmv_spend_purpose <- totals_dmv_spend_purpose |>
 * **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
-
 ```{r}
-
 # Read back in data for house spend. 
 
 house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
@@ -496,7 +494,10 @@ house_spend_18_22 <- house_spend_18_22 |>
   filter(purpose != "INTERN ALLOWANCES TOTALS:")
 
 house_spend_18_22 
+```
 
+
+```{r}
 # Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
 
 house_spend_18_22 %>%
@@ -525,8 +526,9 @@ house_spend_18_22_totals <- house_spend_18_22 %>%
   mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
   mutate(annual_avg_per_member = annual_total / members_per_year)
   
-house_spend_18_22_totals
+```
 
+```{r}
 # Now do the same process for DMV reps. 
 
 totals_dmv_spend %>%
@@ -542,6 +544,11 @@ totals_dmv_spend_totals <- totals_dmv_spend %>%
   mutate(dmv_annual_avg_per_member = dmv_annual_total / 20)
 
 totals_dmv_spend_totals
+
+```
+
+```{r}
+# Now join to compare side by side. 
 
 house_dmv_totals <- house_spend_18_22_totals |> 
   left_join(totals_dmv_spend_totals, join_by(year))
@@ -560,7 +567,13 @@ average_total_difference <- mean(house_dmv_totals$difference)
 
 average_total_difference 
 
-# So on average, DMV reps spent less every year than the House as a whole did, on average $17,073.92 less per member each year. Now let's break it out by category to test the hypothesis that they probably spend less on transportation than other members do. 
+# So on average, DMV reps spent less every year than the House as a whole did, on average $17,073.92 less per member each year. 
+```
+
+
+```{r}
+
+# Now let's test the hypothesis that DMV REPS probably spend less on transportation than other members do. 
 
 house_spend_18_22_travel <- house_spend_18_22 %>%
   filter(purpose == "TRAVEL TOTALS:") %>%
@@ -594,7 +607,7 @@ average_difference <- mean(house_dmv_travel$difference)
 
 average_difference
 
-# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. 
+# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. But they only spend ~$17K less than others overall, meaning that they are overspending somewhere else. 
 
 ```
 
