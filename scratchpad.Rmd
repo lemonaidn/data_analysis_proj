@@ -494,37 +494,43 @@ house_spend_18_22 <- house_spend_18_22 |>
   filter(purpose != "INTERN ALLOWANCES TOTALS:")
 
 house_spend_18_22 
+
+# We see office years in here from 2011 to 2023. That can't be right, let's filter them out. 
+
+house_spend_18_22 <- house_spend_18_22 |> 
+  filter(office_year<=2022)|> 
+  filter(office_year>=2018)
+
+# That looks good to work with. 
+
 ```
 
 
 ```{r}
+
 # Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
 
-house_spend_18_22 %>%
-  filter(office_year >= 2018) %>%
+house_members <- house_spend_18_22 %>%
   group_by(office_year, bioguide_id) %>%
   summarise() %>%
   group_by(office_year) %>%
-  summarise(count = n())
+  summarise(members = n())
 
-# Well that's weird. Why is there a member in office year 2023 when we are looking at expenses from 2018-2022? We gotta filter that out. 
-
-house_spend_18_22 %>%
-  filter(office_year >= 2018) %>%
-  #filter(office_year <= 2022)|> 
-  group_by(office_year, bioguide_id) %>%
-  summarise() %>%
-  group_by(office_year) %>%
-  summarise(count = n())
-
-
+  
 # Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
 
 house_spend_18_22_totals <- house_spend_18_22 %>%
   group_by(year) %>%
-  summarise(annual_total = sum(amount)) %>%
-  mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
-  mutate(annual_avg_per_member = annual_total / members_per_year)
+  summarise(annual_total = sum(amount)) 
+
+house_spend_18_22 <- house_spend_18_22 |> 
+  left_join(house_members)
+
+%>%
+  summarise(annual_avg_per_member = annual_total / members)
+  
+ house_spend_18_22 <- house_spend_18_22 |> 
+   mutate()
   
 ```
 
@@ -788,9 +794,8 @@ category_by_year |>
 * **Question**: Let's get a sense of the high highs and low lows. What are the biggest expenses for DMV reps? Who is the most frugal spender? 
 
 
-* **Analysis summary**: We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, someone in her office made $573,977.80. HOLY SMOKES. That's a pretty penny and might be a story all by itself. Donald McEachin, another Democrat from VA, also paid a staff member more than half a million dollars last year. I'd guess these would be for Chief of Staff positions, but that needs to be verified. Shame on them! Go work in the private sector if you want to get rich off the backs of the 99%.
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
-As for the lowest annual spender in the DMV, it appears at first blush to be Kweisi Mfume of Maryland, who spent $729,418.30 in 2020. That's basically a quarter million les than even the next lowest annual spend, which was Donald Beyer's $986,166.50 in 2018. But wait! A Google search tells us that Mfume was sworn in on May 5, 2020, after a special election for the seat of the late Rep. Elijah Cummings. So the honor in fact goes to Rep Don Beyer of Virginia after all. 
 
 ## What are the highest expenses in the dataset? 
 
@@ -801,6 +806,8 @@ As for the lowest annual spender in the DMV, it appears at first blush to be Kwe
 totals_dmv_spend |> 
   group_by(last_name, first_name, purpose, amount)|> 
   arrange(desc(amount))
+
+# We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, someone in her office made $573,977.80. HOLY SMOKES. That's a pretty penny and might be a story all by itself. Donald McEachin, another Democrat from VA, also paid a staff member more than half a million dollars last year. I'd guess these would be for Chief of Staff positions, but that needs to be verified. Shame on them! Go work in the private sector if you want to get rich off the backs of the 99%. 
 
 ```
 
@@ -820,7 +827,7 @@ spend_by_office <- totals_dmv_spend |>
 spend_by_office |> 
    arrange(office_total)
  
-
+# Kweisi Mfume spent $729,418.30 in 2020. Way to go, man. 
 
 ```
 

@@ -523,6 +523,18 @@ house_spend_18_22_totals <- house_spend_18_22 %>%
   
 house_spend_18_22_totals
 
+
+
+house_spend_18_22 %>%
+14 hours ago
+
+house_spend_18_22
+  filter(office_year >= 2018) %>%
+  group_by(office_year, bioguide_id) %>%
+  summarise() %>%
+  group_by(office_year) %>%
+  summarise(count = n())
+
 ```
 
 ```{r}
