@@ -481,7 +481,9 @@ totals_dmv_spend_purpose <- totals_dmv_spend_purpose |>
 
 * **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: We found that compared to the average in Congress, reps from the DMV spend $15,254.09 less per member each year. We also looked at their travel spending, and found that they spent on average $32,870.38 less annually per year. That means they probably outspend their peers in some other categories, but at least they spend less overall as we expected. 
+
+
 ```{r}
 # Read back in data for house spend. 
 
@@ -500,23 +502,15 @@ house_spend_18_22
 ```{r}
 # Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
 
+house_spend_18_22 <- house_spend_18_22 %>%
+  filter(!is.na(bioguide_id))
+
 house_spend_18_22 %>%
   filter(office_year >= 2018) %>%
   group_by(office_year, bioguide_id) %>%
   summarise() %>%
   group_by(office_year) %>%
   summarise(count = n())
-
-# Well that's weird. Why is there a member in office year 2023 when we are looking at expenses from 2018-2022? We gotta filter that out. 
-
-house_spend_18_22 %>%
-  filter(office_year >= 2018) %>%
-  #filter(office_year <= 2022)|> 
-  group_by(office_year, bioguide_id) %>%
-  summarise() %>%
-  group_by(office_year) %>%
-  summarise(count = n())
-
 
 # Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
 
@@ -525,6 +519,8 @@ house_spend_18_22_totals <- house_spend_18_22 %>%
   summarise(annual_total = sum(amount)) %>%
   mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
   mutate(annual_avg_per_member = annual_total / members_per_year)
+
+house_spend_18_22_totals 
   
 ```
 
@@ -555,10 +551,6 @@ house_dmv_totals <- house_spend_18_22_totals |>
 
 house_dmv_totals
 
-house_dmv_totals |> 
-  group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
-  summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
-
 house_dmv_totals <- house_dmv_totals |> 
   group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
   summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
@@ -567,7 +559,7 @@ average_total_difference <- mean(house_dmv_totals$difference)
 
 average_total_difference 
 
-# So on average, DMV reps spent less every year than the House as a whole did, on average $17,073.92 less per member each year. 
+# So on average, DMV reps spent less every year than the House as a whole did, on average $15,254.09 less per member each year. 
 ```
 
 
@@ -603,11 +595,13 @@ house_dmv_travel<- house_dmv_travel |>
   group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
   summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
 
+house_dmv_travel
+
 average_difference <- mean(house_dmv_travel$difference)
 
 average_difference
 
-# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. But they only spend ~$17K less than others overall, meaning that they are overspending somewhere else. 
+# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. But they only spend ~$15.2K less than others overall, meaning that they are overspending somewhere else. 
 
 ```
 
