@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction 
 
-For our data analysis project, we have chosen to look at House of Representatives Office Expenditures. We think that the dataset is rich with newsworthy details and we know that the public is generally interested in how lawmakers spend their tax dollars.
+For our data analysis project, we have chosen to look at House of Representatives Office Expenditures. We think that the dataset is rich with newsworthy details and we know that the public is generally interested in how lawmakers spend our tax dollars.
 
 ## Load libraries
 
@@ -220,15 +220,16 @@ q1_2018 <- read_csv("data/2018Q1.csv")%>%
 
 # Bind dataframes into one combined dataframe  
 
-house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
+house_spend_18_22 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
 
 # Number of rows is 2,185,315
  
-unique(house_spend_18_23$sort_sequence)
+unique(house_spend_18_22$sort_sequence)
 
+house_spend_18_22 <- house_spend_18_22 %>%
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", house_spend_18_22$office)))
 
-house_spend_18_23 <- house_spend_18_23 %>%
-  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", house_spend_18_23$office)))
+glimpse(house_spend_18_22)
 
 ```
 
@@ -283,8 +284,9 @@ cleaned_members_18_22 <- members_18_22 |>
 
 ```{r}
 # Join the member information with our expenses dataset using the bioguide id
-spend_with_member_info <- house_spend_18_23 |> 
+spend_with_member_info <- house_spend_18_22 |> 
   left_join(cleaned_members_18_22, by = c("bioguide_id" = "id"))
+
 ```
 
 Getting a many-to-many issue. Let's try to find the source
@@ -332,7 +334,7 @@ Our focus in this project will be on DMV representatives, and (gracefully) Mitch
 ```{r}
 # Join the member information with our expenses dataset using the bioguide id
 # Also add a step so we're only looking at DMV representatives
-dmv_spend_with_member_info <- house_spend_18_23 |> 
+dmv_spend_with_member_info <- house_spend_18_22 |> 
   left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
   filter(state == "DC" | state == "VA" | state == "MD")
 
@@ -341,9 +343,18 @@ dmv_spend_with_member_info <- house_spend_18_23 |>
 totals_dmv_spend <- dmv_spend_with_member_info %>%
   filter(sort_sequence == "SUBTOTAL") %>%
   select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+
+# do the same thing for house_spend_18_22, which we will also use later. 
+
+house_spend_18_22 <- house_spend_18_22 %>%
+  filter(sort_sequence == "SUBTOTAL") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
   
-# write this dataframe into a csv in order to skip the cleaning process moving forward 
-# write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
+# write the dataframes to csv in order to skip the cleaning process moving forward 
+
+write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
+
+write_csv(house_spend_18_22, "data/house_spend_18_22.csv")
 
 ```
 
@@ -384,21 +395,20 @@ When the amount is negative, what does that signify?
 
 ##### POST-CLEAN |  START FROM HERE TO SKIP CLEANING PROCESS WITH FRESH DATAFRAME (R WILL RUN FASTER :)) #### 
 
+## Load in cleaned data. 
+
 ```{r}
 
 # Read in the data for spending of DMV reps. 
 
 totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
 
-```
-
-```{r}
-# glimpse of the cleaned details data set
+# Glimpse the cleaned details data set
 
 glimpse(totals_dmv_spend)
 
 ```
-
+## Do some basic aggregates to make sure that further cleaning isn't needed. 
 
 ```{r}
 
@@ -409,11 +419,13 @@ totals_dmv_spend_purpose <- totals_dmv_spend %>%
   summarise(total_expenses = sum(amount)) %>%
   arrange(desc(total_expenses))
 
-# OFFICIAL EXPENSES OF MEMBER TOTALS sounds really vague, and it's the top number by far with a spend of $135,333,002.69. We also notice that Official Expenses of Members is one of the two options for the program column in totals_dmv_spend. That seems like a red flag. 
+totals_dmv_spend_purpose 
 
-# The other value in the program column is INTERN ALLOWANCES. We have a column in totals_dmv_spend_purpose called INTERN ALLOWANCES TOTALS: as well, which totals 1532417.41
+# OFFICIAL EXPENSES OF MEMBER TOTALS sounds really vague, and it's the top category by far with a spend of $135,333,002.69. We also notice that Official Expenses of Members is one of the two options for the "program" column in totals_dmv_spend. That seems like a red flag. 
 
-# Are these two values in the purpose category totally redundant? Let's save these numbers, then filter the two rows out and see if they equal the sum of all other purposes that remain. 
+# The other value in the program column is INTERN ALLOWANCES. We have a column in totals_dmv_spend_purpose called INTERN ALLOWANCES TOTALS: as well, which totals $1,532,417.41
+
+# Are these two values in the purpose category redundant? Let's save these numbers, then filter the two rows out and see if they equal the sum of all other purposes that remain. 
 
 official <- 135333002.69
 interns <- 1532417.41
@@ -424,6 +436,8 @@ totals_dmv_spend_purpose <- totals_dmv_spend %>%
   group_by(purpose) %>%
   summarise(total_expenses = sum(amount)) %>%
   arrange(desc(total_expenses))
+
+totals_dmv_spend_purpose 
 
 # What's the sum of all of the remaining 9 categories? Does it equal the sum of OFFICIAL EXPENSES OF MEMBER TOTALS and INTERN ALLOWANCES? 
 
@@ -446,26 +460,19 @@ totals_dmv_spend <- totals_dmv_spend %>%
 
 # Just double checking that now we have only the appropriate 9 options for purpose. 
 
-totals_dmv_spend %>%
-  group_by(purpose)|> 
-  summarise()
+totals_dmv_spend_purpose <- totals_dmv_spend %>%
+  group_by(purpose) %>%
+  summarise(total_expenses = sum(amount)) %>%
+  arrange(desc(total_expenses))
 
-# Good to go! 
+totals_dmv_spend_purpose 
 
-```
+# Let's get a percent of total column as well. 
 
-
-```{r}
-
-# What are the top individual expenses in our data?
-
-totals_dmv_spend |> 
-  group_by(last_name, first_name, purpose, amount)|> 
-  arrange(desc(amount))
-
-## Why is group_by not working here? 
-
-# We already know from our category overview that personnel compensation makes up the lion's share of spending by congress. The top expense is from Elaine G. Luria, a Democrat from Virginia, in 2022. Someone in her office made $573,977.80. HOLY SMOKES. That's a pretty penny and might be a story all by itself. Donald McEachin, another Democrat from VA, also paid a staff member more than half a million dollars last year. Shame on them! I'd guess this would be for Chief of Staff positions, but that needs to be verified. 
+totals_dmv_spend_purpose <- totals_dmv_spend_purpose |> 
+  mutate(pct_of_total = (total_expenses/(sum(total_expenses)))*100)
+         
+# Looks good! 
 
 ```
 
@@ -478,47 +485,49 @@ totals_dmv_spend |>
 
 ```{r}
 
-# First, calculate avg spend for all members
+# Read back in data for house spend. 
 
-house_spend_18_23 <- house_spend_18_23 %>%
-  filter(sort_sequence == "SUBTOTAL") %>%
-  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date) %>%
-  # filter out anything that doesn't include a bioguide id so we're not factoring in spend by committees
-  filter(!is.na(bioguide_id))
+house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
 
-house_spend_18_23
+# Clean it the same way we did for the DMV members. 
 
-```
+house_spend_18_22 <- house_spend_18_22 |> 
+  filter(purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS:")|> 
+  filter(purpose != "INTERN ALLOWANCES TOTALS:")
 
-```{r}
-# confirm that there are 435 unique members per year
+house_spend_18_22 
 
-house_spend_18_23 %>%
+# Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
+
+house_spend_18_22 %>%
   filter(office_year >= 2018) %>%
   group_by(office_year, bioguide_id) %>%
   summarise() %>%
   group_by(office_year) %>%
   summarise(count = n())
-```
-Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year
 
-```{r}
+# Well that's weird. Why is there a member in office year 2023 when we are looking at expenses from 2018-2022? We gotta filter that out. 
 
-house_spend_18_23_totals <- house_spend_18_23 %>%
-  filter(purpose == "OFFICIAL EXPENSES OF MEMBERS TOTALS:") %>%
-  #need to group_by and calculate avgs per year so our avgs aren't skewed based on how many years a member has served
+house_spend_18_22 %>%
+  filter(office_year >= 2018) %>%
+  #filter(office_year <= 2022)|> 
+  group_by(office_year, bioguide_id) %>%
+  summarise() %>%
+  group_by(office_year) %>%
+  summarise(count = n())
+
+
+# Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
+
+house_spend_18_22_totals <- house_spend_18_22 %>%
   group_by(year) %>%
   summarise(annual_total = sum(amount)) %>%
   mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
   mutate(annual_avg_per_member = annual_total / members_per_year)
   
-house_spend_18_23_totals
+house_spend_18_22_totals
 
-```
-
-```{r}
-
-# now do the same for dmv members
+# Now do the same process for DMV reps. 
 
 totals_dmv_spend %>%
   filter(office_year >= 2018) %>%
@@ -527,30 +536,33 @@ totals_dmv_spend %>%
   group_by(office_year) %>%
   summarise(count = n())
 
-
-```
-
-```{r}
-
 totals_dmv_spend_totals <- totals_dmv_spend %>%
-  filter(purpose == "OFFICIAL EXPENSES OF MEMBERS TOTALS:") %>%
-  #need to group_by and calculate avgs per year so our avgs aren't skewed based on how many years a member has served
   group_by(year) %>%
-  summarise(annual_total = sum(amount)) %>%
-  mutate(annual_avg_per_member = annual_total / 20)
+  summarise(dmv_annual_total = sum(amount)) %>%
+  mutate(dmv_annual_avg_per_member = dmv_annual_total / 20)
 
 totals_dmv_spend_totals
 
-```
+house_dmv_totals <- house_spend_18_22_totals |> 
+  left_join(totals_dmv_spend_totals, join_by(year))
 
-So on average, DMV reps spent less every year than the House as a whole did. However, it's not by much -- typically only ~20k less.
+house_dmv_totals
 
-Now let's break it out by category to test the hypothesis that they probably spend less on transportation than other members do
+house_dmv_totals |> 
+  group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
+  summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
 
+house_dmv_totals <- house_dmv_totals |> 
+  group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
+  summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
 
-```{r}
+average_total_difference <- mean(house_dmv_totals$difference)
 
-house_spend_18_23_totals_travel <- house_spend_18_23 %>%
+average_total_difference 
+
+# So on average, DMV reps spent less every year than the House as a whole did, on average $17,073.92 less per member each year. Now let's break it out by category to test the hypothesis that they probably spend less on transportation than other members do. 
+
+house_spend_18_22_travel <- house_spend_18_22 %>%
   filter(purpose == "TRAVEL TOTALS:") %>%
   #need to group_by and calculate avgs per year so our avgs aren't skewed based on how many years a member has served
   group_by(year) %>%
@@ -558,23 +570,33 @@ house_spend_18_23_totals_travel <- house_spend_18_23 %>%
   mutate(members_per_year = c(451, 447, 442, 451, 448)) %>%
   mutate(annual_avg_per_member = annual_total / members_per_year)
   
-house_spend_18_23_totals_travel
+house_spend_18_22_travel
 
-```
-
-```{r}
-totals_dmv_spend_totals <- totals_dmv_spend %>%
+dmv_spend_travel <- totals_dmv_spend %>%
   filter(purpose == "TRAVEL TOTALS:") %>%
   #need to group_by and calculate avgs per year so our avgs aren't skewed based on how many years a member has served
   group_by(year) %>%
-  summarise(annual_total = sum(amount)) %>%
-  mutate(annual_avg_per_member = annual_total / 20)
+  summarise(dmv_annual_total = sum(amount)) %>%
+  mutate(dmv_annual_avg_per_member = dmv_annual_total / 20)
 
-totals_dmv_spend_totals
+dmv_spend_travel
+
+house_dmv_travel <- house_spend_18_22_travel |> 
+  left_join(dmv_spend_travel, join_by(year))
+
+house_dmv_travel
+
+house_dmv_travel<- house_dmv_travel |> 
+  group_by(year, annual_avg_per_member, dmv_annual_avg_per_member)|> 
+  summarise(difference = annual_avg_per_member - dmv_annual_avg_per_member)
+
+average_difference <- mean(house_dmv_travel$difference)
+
+average_difference
+
+# Hypothesis confirmed that they spend substantially less on travel than other members, on average more $32,870.38 less annually per member. 
+
 ```
-
-Hypothesis confirmed that they spend substantially less on travel than other members.
-
 
 ### Question 2
 
@@ -750,17 +772,34 @@ category_by_year |>
 
 ### Question 4
 
-* **Question**: Which offices in the House are spending the least annually? There may be an interesting story behind lawmakers who have shown restraint in spending their budgets compared to colleagues.
+* **Question**: Let's get a sense of the high highs and low lows. What are the biggest expenses for DMV reps? Who is the most frugal spender? 
 
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+
+## What are the highest expenses in the dataset? 
+
+```{r}
+
+# What are the top individual expenses from DMV reps, 2018-2022?
+
+totals_dmv_spend |> 
+  group_by(last_name, first_name, purpose, amount)|> 
+  arrange(desc(amount))
+
+# We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, someone in her office made $573,977.80. HOLY SMOKES. That's a pretty penny and might be a story all by itself. Donald McEachin, another Democrat from VA, also paid a staff member more than half a million dollars last year. I'd guess these would be for Chief of Staff positions, but that needs to be verified. Shame on them! Go work in the private sector if you want to get rich off the backs of the 99%. 
+
+```
+
+## Which offices in the DMV are spending the least annually? There may be an interesting story behind lawmakers who have shown restraint in spending their budgets compared to colleagues.
 
 ```{r}
 
 # Create a new column that sums an offices expenses into a total sum.  
 
 spend_by_office <- totals_dmv_spend |> 
-  filter(office_year >= 2018) |>
+  filter(office_year >= 2018) |> 
   group_by(last_name, first_name, office_year)|> 
   summarise(office_total = sum(amount))
 
