@@ -680,9 +680,27 @@ spend_by_office |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to here
+staff_pay <- totals_dmv_spend |> 
+  filter(category == "PERSONNEL COMPENSATION") |> 
+  group_by(program, year) |> 
+  summarize(congress_average = sum(amount)/n())
 
-# Display results of code below this codeblock
+standard_staff_pay <- staff_pay |> 
+  filter(program != "INTERN ALLOWANCES")
+
+national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names()
+
+staff_plus_national <- standard_staff_pay |> left_join(national_wages, join_by(year))
+
+staff_plus_national |> 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = congress_average), color= "red")+
+  geom_line(aes(y = index), color = "blue") +
+  labs(x="Year",
+       y="Amount Paid",
+       title="",
+       caption="source: ProPublica") +
+  theme_minimal()
 
 ```
 

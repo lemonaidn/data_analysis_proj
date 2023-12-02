@@ -225,7 +225,8 @@ house_spend_18_23 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021,
 unique(house_spend_18_23$sort_sequence)
 
 
-house_spend_18_23 <- house_spend_18_23
+house_spend_18_23 <- house_spend_18_23 %>%
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", house_spend_18_23$office)))
 
 ```
 
@@ -336,7 +337,8 @@ dmv_spend_with_member_info <- house_spend_18_23 |>
 # create a dmv_df that's only the subtotals
   
 totals_dmv_spend <- dmv_spend_with_member_info %>%
-  filter(sort_sequence == "SUBTOTAL") 
+  filter(sort_sequence == "SUBTOTAL") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
   
 # write this dataframe into a csv in order to skip the cleaning process moving forward 
 write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
@@ -384,8 +386,7 @@ When the amount is negative, what does that signify?
 
 # Read in the data for spending of DMV reps. 
 
-totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv") |> 
-  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
 
 ```
 
@@ -489,7 +490,6 @@ totals_dmv_spend |>
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-
 # First we needed to do a little research about who controlled the House from 2018-2022. It was Republicans in 2018 and Democrats every other year, so we made a simple spreadsheet to import. Let's do that now. 
 
 house_majority <- read_csv("data/house_majority.csv")
@@ -497,55 +497,48 @@ house_majority <- read_csv("data/house_majority.csv")
 # Join with the totals_dmv_spend dataframe 
 
 totals_dmv_spend <- totals_dmv_spend |> 
-  left_join(house_majority, join_by(year))
+  left_join(house_majority, join_by("office_year" == "year"))
 
-# Which political party in the DMV does the most spending? does that change with whether or not that party holds the majority in the House?
+totals_dmv_spend
+```
 
-totals_dmv_spend |> 
-  group_by(party, year, majority_party)|> 
-  summarise(party_spend = sum(amount))|> 
-  arrange(desc(party_spend))
+```{r}
 
-# It looks like Democrats are generally spending more every year, with the exception of 2020 which may be an outlier because of the pandemic. But Republicans spent the most in 2018, the year they were in the majority. Otherwise the Republican spending trends similarly to Democrats (2022 followed by 2020, 2021, 2019).  
+all_members_per_year <- totals_dmv_spend %>%
+  group_by(office_year,bioguide_id,party) %>%
+  summarise()
 
-# So that answers the second part of our question. It looks like parties in power will spend more than normal. But let's also look a the spend proportionally. Are there more Dems or Reps over the 5 years? 
+all_members_per_year
+```
 
-totals_dmv_spend |> 
-  group_by(bioguide_id, party, last_name, first_name) |> 
-  summarise() |> 
-  filter(party == "D")
+```{r}
+members_grouped_per_year <- all_members_per_year %>%
+  group_by(party, office_year) %>%
+  summarise(party_members_per_year = n()) %>%
+  filter(office_year >= 2017) %>%
+  arrange(office_year)
 
-totals_dmv_spend |> 
-  group_by(bioguide_id, party, last_name, first_name) |> 
-  summarise() |> 
-  filter(party == "R")
+members_grouped_per_year
+```
 
-# There have been 17 Democrats representing the DMV over the past 5 years, in addition to 11 Republicans. Now let's look at average spend for a rep per year per party to compare if individual Democrats spend more than individual Republicans. 
+```{r}
+party_spending_annual <- totals_dmv_spend |>
+  group_by(party, office_year, majority_party)|>
+  summarise(party_spend = sum(amount))|>
+  arrange(desc(party_spend)) %>%
+  arrange(office_year)
 
-#avg_spend_dmv <- totals_dmv_spend |> 
- # group_by(bioguide_id, last_name, first_name, party, year) |> 
- # mutate(total_spend = sum(amount))|> 
- # mutate (years_in_office = count(year))
+party_spending_annual
+```
 
+```{r}
+party_spending_w_rep_numbers <- party_spending_annual %>%
+  left_join(members_grouped_per_year) %>%
+  mutate(avg_spend_per_member = party_spend / party_members_per_year) %>%
+  filter(office_year >=2018)  %>%
+  arrange(desc(avg_spend_per_member)) 
 
-# I feel like group_by is not doing what I need it to and I'm still seeing a bunch of columns I don't want. Also the count() function I maybe made up because it's not working. I asked ChaptGPT and it said this is another way to do that: 
-
-selected_columns <- c("bioguide_id", "last_name", "first_name", "party", "year", "majority_party", "purpose", "state", "amount")
-
-avg_spend_dmv <- totals_dmv_spend |> 
-  select(all_of(selected_columns))
-
-avg_spend_dmv <- avg_spend_dmv |> 
-  group_by(bioguide_id) |> 
-  mutate(total_spend = sum(amount))|> 
-  mutate(years_in_office = n_distinct(year))|> 
-  mutate(yearly_spend = (total_spend/years_in_office))|> 
-  unique()
-
-# WHY IS GROUP_BY NOT WORKING!!!! I STILL HAVE A ROW FOR EVERY PURPOSE, WHEN I JUST WANT A ROW FOR EVERY REP (BIOGUIDE ID). WHAT THE FUDGE. 
-
-
-
+party_spending_w_rep_numbers
 ```
 
 ### Question 3
@@ -553,6 +546,7 @@ avg_spend_dmv <- avg_spend_dmv |>
 * **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
 
 ```{r}
 # Since there isn't a specific date column, we need to go by year. 2020 and 2021 were the main COVID years.
@@ -662,23 +656,17 @@ category_by_year |>
 
 # Create a new column that sums an offices expenses into a total sum.  
 
-totals_dmv_spend_offt <- totals_dmv_spend |> 
-  group_by(last_name, first_name, year)|> 
-  summarise(office_total = sum(amount)) |> 
-  arrange(desc(office_total))
-totals_dmv_spend_offt
-
-totals_dmv_spend |> 
-  filter(last_name == "CUMMINGS" & first_name == "ELIJAH" & year == "2020") |> 
-  group_by(year) |> 
-  summarise(office_total = sum (amount))
+spend_by_office <- totals_dmv_spend |> 
+  filter(office_year >= 2018) |>
+  group_by(last_name, first_name, office_year)|> 
+  summarise(office_total = sum(amount))
 
 # Arrange to see which office spent the least over a year. 
 
-totals_dmv_spend |> 
-  filter()
+spend_by_office |> 
+   arrange(office_total)
  
- ## WHY ARE MY GROUP BYS NOT WORKING :( 
+# Kweisi Mfume spent $729,418.30 in 2020. Way to go, man. 
 
 ```
 
@@ -691,8 +679,29 @@ totals_dmv_spend |>
 
 ```{r}
 # Put code to here
+staff_pay <- totals_dmv_spend |> 
+  filter(category == "PERSONNEL COMPENSATION") |> 
+  group_by(program, year) |> 
+  summarize(congress_average = sum(amount)/n())
 
-# Line graph with two lines, personal compensation
+standard_staff_pay <- staff_pay |> 
+  filter(program != "INTERN ALLOWANCES")
+
+national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names()
+
+staff_plus_national <- standard_staff_pay |> left_join(national_wages, join_by(year))
+
+staff_plus_national |> 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = congress_average), color= "red")+
+  geom_line(aes(y = index), color = "blue") +
+  labs(x="Year",
+       y="Amount Paid",
+       title="",
+       caption="source: ProPublica") +
+  theme_minimal()
+  
+
 # Display results of code below this codeblock
 
 ```
