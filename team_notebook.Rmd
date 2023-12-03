@@ -880,6 +880,8 @@ Let's select and plot just a few roles' averages against national wage growth da
 
 ```{r}
 
+# get a df with avg annual pay for leg aides, press secs, and schedulers (for job titles ONLY described as schedulers, none with dual roles)
+
 cleaned_details_dmv_staff_pay <- cleaned_details_dmv_staff_pay %>%
   filter(purpose == "SCHEDULER" | purpose == "LEGISLATIVE AIDE" | purpose == "PRESS SECRETARY") %>%
   rename("job_title" = "purpose",
@@ -891,6 +893,8 @@ cleaned_details_dmv_staff_pay
 ```
 
 ```{r}
+# update the national_wage df to allow for binding and plotting with the staff pay df from above
+
 national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names() %>%
   rename("avg_salary" = "index") %>%
   mutate(job_title = "national_wages") %>%
@@ -919,44 +923,63 @@ ggplot(wage_comparison_df, aes(x = year, y = avg_salary, color = job_title)) +
 ```
 
 
+
 Let's try to switch gears and just look at a percent change in staff salaries year over year using subtotal records, and compare that to national trends in wage growth. However, the accuracy of those calculations would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
 
 ```{r}
-totals_dmv_spend %>%
-  filter(purpose == "PERSONNEL COMPENSATION TOTALS:")
+# calculate annual % change in personnel expenditures for DMV reps
+
+totals_dmv_spend_pct_change <- totals_dmv_spend %>%
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
+         program == "OFFICIAL EXPENSES OF MEMBERS") %>%
+  group_by(year) %>%
+  summarise(amount = sum(amount)) %>%
+  # I got ChatGPT's help with this last step since I wasn't familiar with the "lag" function:
+  mutate(pct_change = c((amount - lag(amount)) / lag(amount) * 100)) %>%
+  mutate(data_source = "Personnel Expenditure Subtotals")
+
+totals_dmv_spend_pct_change
+```
+
+```{r}
+# calculate annual % change in personnel expenditures for national wage avgs
+
+national_wages_pct_change <- national_wages %>%
+  mutate(pct_change = c((avg_salary - lag(avg_salary)) / lag(avg_salary) * 100)) %>%
+  mutate(data_source = "National Wage Avgs") %>%
+  rename("amount" = "avg_salary") %>%
+  select(-job_title)
 ```
 
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-staff_pay <- totals_dmv_spend |> 
-  filter(category == "PERSONNEL COMPENSATION") |> 
-  group_by(program, year) |> 
-  summarize(congress_average = sum(amount)/n())
+# bind the data
 
-standard_staff_pay <- staff_pay |> 
-  filter(program != "INTERN ALLOWANCES")
+wage_comparison_pct_change_df <- rbind(totals_dmv_spend_pct_change, national_wages_pct_change) %>%
+  arrange(year)
 
-national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names()
+wage_comparison_pct_change_df
+```
+```{r}
+# visualize
 
-staff_plus_national <- standard_staff_pay |> left_join(national_wages, join_by(year))
-
-staff_plus_national |> 
-  ggplot(aes(x = year)) +
-  geom_line(aes(y = congress_average), color= "red")+
-  geom_line(aes(y = index), color = "blue") +
-  labs(x="Year",
-       y="Amount Paid",
-       title="",
-       caption="source: ProPublica") +
+ggplot(wage_comparison_pct_change_df, aes(x = year, y = pct_change, color = data_source, group = data_source)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Percent Change Over Years by Data Source",
+       x = "Year",
+       y = "Percent Change",
+       color = "Data Source") +
   theme_minimal()
 
+# Display the plot
+print(ggplot())
 ```
 
 ### Memo as of Saturday December 2nd. 
 
-Hey Derek! We've been having a time with this dataset. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a dataset that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office, and we're using that value to determine the year of the expense. Not all rows (eg the subtotal rows) have start and end date values populated which is why we couldn't extract year from those cols instead.
+Hey Derek! We've been having a time with this data set. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a data set that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office, and we're using that value to determine the legislative year of the expense. Not all rows (eg the subtotal rows) have start and end date values populated which is why we couldn't extract year from those cols instead, and most years don't have a pre-defined leg year column already.
 
 We're also struggling right now with figuring out the average compensation for congressional staffers. Not every staffer was paid throughout the duration of an office year. For example, there's a staff assistant's record that only pertains to 2022-05-02 through 2022-06-30, while other records pertain to a full quarter. This could be for a variety of reasons -- hires or resignations mid-quarter, staff moving from the "official" side to the "campaign" side during an election year, etc.
 
@@ -966,6 +989,6 @@ However, trying to calculate averages for staffers using detail-level data still
 
 As an alternate method, we thought about just looking at a percent change in staff salaries year over year and comparing that to national trends in wage growth. However, that would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
 
-After doing further research, even the Congressional Research Service has highlighted the difficulty and data concerns they ran into when trying to use publicly available data to perform similar calculations to ours. They ultimately had to rely on LegiStorm data, and even then listed quite a number of "data concerns" that likely affect the accuracy of their own findings. Here's the report: https://crsreports.congress.gov/product/pdf/R/R44323
+After doing further reading, even the Congressional Research Service has highlighted the difficulty and data concerns they ran into when trying to use publicly available data to perform similar calculations to ours. They ultimately had to rely on LegiStorm data, and even then listed quite a number of "data concerns" that likely affect the accuracy of their own findings. Here's the report: https://crsreports.congress.gov/product/pdf/R/R44323
 
 This is a real pain to deal with, it's almost like Congress wants us to stay out of it! 
