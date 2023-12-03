@@ -915,14 +915,14 @@ wage_comparison_df
 ggplot(wage_comparison_df, aes(x = year, y = avg_salary, color = job_title)) +
   geom_line() +
   geom_point() +
-  labs(title = "Average Salary Over Years by Job Title",
+  labs(title = "Leg. aide wages remain far behind national average",
        x = "Year",
        y = "Average Salary",
        color = "Job Title") +
   theme_minimal()
 ```
 
-
+(I'll update "national_wages" later so it has a label that matches the format of the other job titles)
 
 Let's try to switch gears and just look at a percent change in staff salaries year over year using subtotal records, and compare that to national trends in wage growth. However, the accuracy of those calculations would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
 
@@ -935,7 +935,7 @@ totals_dmv_spend_pct_change <- totals_dmv_spend %>%
   group_by(year) %>%
   summarise(amount = sum(amount)) %>%
   # I got ChatGPT's help with this last step since I wasn't familiar with the "lag" function:
-  mutate(pct_change = c((amount - lag(amount)) / lag(amount) * 100)) %>%
+  mutate(pct_change = (amount - 18276024) / 18276024 * 100) %>%
   mutate(data_source = "Personnel Expenditure Subtotals")
 
 totals_dmv_spend_pct_change
@@ -945,10 +945,12 @@ totals_dmv_spend_pct_change
 # calculate annual % change in personnel expenditures for national wage avgs
 
 national_wages_pct_change <- national_wages %>%
-  mutate(pct_change = c((avg_salary - lag(avg_salary)) / lag(avg_salary) * 100)) %>%
+  mutate(pct_change = (avg_salary - 52145.80) / 52145.80 * 100) %>%
   mutate(data_source = "National Wage Avgs") %>%
   rename("amount" = "avg_salary") %>%
   select(-job_title)
+
+national_wages_pct_change
 ```
 
 
@@ -967,10 +969,10 @@ wage_comparison_pct_change_df
 ggplot(wage_comparison_pct_change_df, aes(x = year, y = pct_change, color = data_source, group = data_source)) +
   geom_line() +
   geom_point() +
-  labs(title = "Percent Change Over Years by Data Source",
+  labs(title = "Growth in House Staff Pay Outpaces National Trends",
        x = "Year",
-       y = "Percent Change",
-       color = "Data Source") +
+       y = "Percent Change vs 2018",
+       color = "") +
   theme_minimal()
 
 # Display the plot
