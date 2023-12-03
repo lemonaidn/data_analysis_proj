@@ -677,7 +677,7 @@ party_spending_w_rep_numbers
 
 * **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: We found that during the height of the pandemic in 2020, DMV representatives spent way less on travel and rent, communication utilities. Spending on supplies and materials peaked in 2020, while franked mail was high in 2018, 2020 and 2022 (could be related to them being election years). Spending on printing and reproduction, as well as personnel compensation have all been rising every year. On the other had, spending on equipment has dropped dramatically.
 
 
 ```{r}
@@ -788,7 +788,7 @@ category_by_year |>
 
 * **Analysis summary**: We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, her staffers made at a total of $573,977.80. 
 
-As for the lowest annual spender in the DMV, it appears at first blush to be Kweisi Mfume of Maryland, who spent $729,418.30 in 2020. That's basically a quarter million les than even the next lowest annual spend, which was Donald Beyer's $986,166.50 in 2018. But wait! A Google search tells us that Mfume was sworn in on May 5, 2020, after a special election for the seat of the late Rep. Elijah Cummings. So the honor in fact goes to Rep Don Beyer of Virginia after all. 
+As for the lowest annual spender in the DMV, it appears at first blush to be Kweisi Mfume of Maryland, who spent $729,418.30 in 2020. That's basically a quarter million less than even the next lowest annual spend, which was Donald Beyer's $986,166.50 in 2018. But wait! A Google search tells us that Mfume was sworn in on May 5, 2020, after a special election for the seat of the late Rep. Elijah Cummings. So the honor in fact goes to Rep Don Beyer of Virginia after all. 
 
 ## What are the highest expenses in the dataset? 
 
@@ -993,4 +993,8 @@ As an alternate method, we thought about just looking at a percent change in sta
 
 After doing further reading, even the Congressional Research Service has highlighted the difficulty and data concerns they ran into when trying to use publicly available data to perform similar calculations to ours. They ultimately had to rely on LegiStorm data, and even then listed quite a number of "data concerns" that likely affect the accuracy of their own findings. Here's the report: https://crsreports.congress.gov/product/pdf/R/R44323
 
-This is a real pain to deal with, it's almost like Congress wants us to stay out of it! 
+Amidst all the chaos, we were still able to find out some pretty interesting trends. One is that when we were comparing spending among DMV representatives during COVID to other years, we found that travel went down, but supplies and materials increased. Printing and reproduction increased dramatically post-COVID, particularly in 2022, where there was a huge spike. We don't have complete 2023 data, but if we did, it would be interesting to see if that category is still rising at the same rate. Franked mail goes up and down every year, going up specifically in 2018, 2020 and 2022. We think this may have something to do with those being election years.
+
+We were also shocked to see that Maryland Rep. Kweisi Mfume spent so little in 2020, with only $729,418.30 in 2020, however we came to find out that he was swore in in May as the replacement for Rep. Cummings who passed away the year before. So the actual lowest annual spender is Rep. Don Beyer with $986,166.50 in 2018.
+
+Overall, this is a real pain to deal with. It's almost like Congress wants us to stay out of it! 
