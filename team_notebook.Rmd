@@ -332,7 +332,7 @@ V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
 Our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other states. This means we can redo the join now without worrying about the remaining many-to-many issues they're causing since those rows will get filtered out right afterwards
 
 ```{r}
-# Join the member information with our expenses dataset using the bioguide id
+# Join the member information with our expenses data set using the bioguide id
 # Also add a step so we're only looking at DMV representatives
 dmv_spend_with_member_info <- house_spend_18_22 |> 
   left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
@@ -342,13 +342,13 @@ dmv_spend_with_member_info <- house_spend_18_22 |>
   
 totals_dmv_spend <- dmv_spend_with_member_info %>%
   filter(sort_sequence == "SUBTOTAL") %>%
-  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
 
 # do the same thing for house_spend_18_22, which we will also use later. 
 
 house_spend_18_22 <- house_spend_18_22 %>%
   filter(sort_sequence == "SUBTOTAL") %>%
-  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
   
 # write the dataframes to csv in order to skip the cleaning process moving forward 
 
@@ -826,6 +826,106 @@ spend_by_office |>
 
 * **Question**: Has staff pay kept on pace with wage growth nation-wide? The Federal Times has reported on this question, but we think it would be well-suited for data visualization.
 
+```{r}
+
+details_dmv_staff_pay <- dmv_spend_with_member_info %>%
+  filter(category == "PERSONNEL COMPENSATION") %>%
+  filter(office_year >= 2018) %>%
+  # exclude interns, temporary and part-time employees, and total/subtotal rows 
+  filter(program != "INTERN ALLOWANCES") %>%
+  filter(purpose != "PERSONNEL COMPENSATION TOTALS:" & purpose != "TEMPORARY EMPLOYEE" & purpose != "PAID INTERN" & purpose != "PART-TIME EMPLOYEE (OTHER COMPENSATION)" & purpose != "PART-TIME EMPLOYEE (OTHER COMPENSATION)" & purpose != "PART-TIME EMPLOYEE" & purpose != "OFFICE TOTALS:" & purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+
+details_dmv_staff_pay
+
+```
+
+Here's where we run into an issue: each of these rows might pertain to different lengths of time, making direct comparison of various amounts (or incorporation into a reliable average) a bit difficult. For example, there's a staff assistant's record that only pertains to 2022-05-02 through 2022-06-30, while other records pertain to the full Q2. This could be for a variety of reasons -- hires or resignations mid-quarter, staff moving from the "official" side to the "campaign" side during an election year, etc.
+
+This is a significant limitation on our ability to easily answer this question using this data set that we didn't recognize earlier.
+
+Although it's not a perfect solution, let's standardize the "amount" values by using the start date and end date of each expense to calculate how many days of a staffer's salary the expense covers. We'll then divide the "amount" col by that number of days, and then multiply it by 91.25 (365/4). These numbers won't be 100% accurate vs their real salaries, but should get us within spitting distance and serve as a pretty rough estimate of what their quarterly (and then annual) salary would be.
+
+```{r}
+
+details_dmv_staff_pay <- details_dmv_staff_pay %>%
+  mutate(days_covered = as.numeric(difftime(end_date, start_date, units = "days"))+1) %>%
+  mutate(est_quarterly_pay = amount / days_covered * 91.25) %>%
+  mutate(est_annual_pay = est_quarterly_pay * 4)
+
+
+details_dmv_staff_pay
+
+```
+
+Now let's calculate a per-role, per-year avg salary. NOTE: "Other compensation" records seem to be one-time additional payments (do congressional staffers earn bonuses?...) rather than a normal part of staffers' salaries so I'm excluding them. Same with overtime pay.
+
+```{r}
+
+cleaned_details_dmv_staff_pay <- details_dmv_staff_pay %>%
+  filter(!str_detect(purpose, "OTHER COMPENSATION") & !str_detect(purpose, "OVERTIME")) %>%
+  select(office_year, payee, purpose, est_annual_pay) %>%
+  distinct() %>%
+  group_by(office_year, purpose) %>%
+  summarise(avg_salary = sum(est_annual_pay) / n()) %>%
+  arrange(avg_salary)
+
+cleaned_details_dmv_staff_pay
+
+```
+
+It's hard to identify which records or job titles are permanent staff positions vs temporary, contract, etc. expenses without manually checking each of the hundreds of grouped values in the "purpose" column, seeing which dates and frequencies they appear, and then using best judgement/assumptions to further standardize or filter. We weren't feeling confident in the likelihood that the results would be accurate due to all of the factors discussed above.
+
+Let's select and plot just a few roles' averages against national wage growth data just for comparison's sake. However, note that these results are also fuzzy/difficult to use since some job titles suggest dual roles for certain staffers (for example, some schedulers might just be schedulers, while others are both schedulers/press assistant or schedulers/deputy comm dirs, etc.)
+
+```{r}
+
+cleaned_details_dmv_staff_pay <- cleaned_details_dmv_staff_pay %>%
+  filter(purpose == "SCHEDULER" | purpose == "LEGISLATIVE AIDE" | purpose == "PRESS SECRETARY") %>%
+  rename("job_title" = "purpose",
+         "year" = "office_year") %>%
+  arrange(year)
+
+cleaned_details_dmv_staff_pay
+
+```
+
+```{r}
+national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names() %>%
+  rename("avg_salary" = "index") %>%
+  mutate(job_title = "national_wages") %>%
+  select(year, job_title, avg_salary) %>%
+  filter(year >= 2018)
+
+national_wages 
+```
+
+```{r}
+wage_comparison_df <- rbind(cleaned_details_dmv_staff_pay, national_wages) %>%
+  arrange(year)
+
+wage_comparison_df
+```
+
+```{r}
+ggplot(wage_comparison_df, aes(x = year, y = avg_salary, color = job_title)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Average Salary Over Years by Job Title",
+       x = "Year",
+       y = "Average Salary",
+       color = "Job Title") +
+  theme_minimal()
+```
+
+
+Let's try to switch gears and just look at a percent change in staff salaries year over year using subtotal records, and compare that to national trends in wage growth. However, the accuracy of those calculations would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
+
+```{r}
+totals_dmv_spend %>%
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:")
+```
+
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
@@ -856,8 +956,16 @@ staff_plus_national |>
 
 ### Memo as of Saturday December 2nd. 
 
-Hey Derek! We've been having a time with this dataset. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a dataset that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office. 
+Hey Derek! We've been having a time with this dataset. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a dataset that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office, and we're using that value to determine the year of the expense. Not all rows (eg the subtotal rows) have start and end date values populated which is why we couldn't extract year from those cols instead.
 
-We're also struggling right now with figuring out the average compensation for congressional staffers. Not every staffer was paid throughout the duration of an office year, we imagine people come and go all the time. But that's making it very difficult to figure out an average salary when we don't know how many staff members to divide it by. We thought about just looking at a percent change in staff salaries year over year and comparing that to national trends in wage growth. However that would have a big presumption that the level of staffing has stayed constant and offices have not grown. 
+We're also struggling right now with figuring out the average compensation for congressional staffers. Not every staffer was paid throughout the duration of an office year. For example, there's a staff assistant's record that only pertains to 2022-05-02 through 2022-06-30, while other records pertain to a full quarter. This could be for a variety of reasons -- hires or resignations mid-quarter, staff moving from the "official" side to the "campaign" side during an election year, etc.
+
+We tried to account for this by standardizing the "amount" values. We used the start date and end date of each expense to calculate how many days of a staffer's salary the expense covers. We then divided the "amount" col by that number of days, and then multiplied it by 91.25 (365/4). Those numbers won't be 100% accurate vs their real salaries, but we hoped would get us within spitting distance and serve as a pretty rough estimate of what their quarterly (and then annual) salary would be.
+
+However, trying to calculate averages for staffers using detail-level data still presented several challenges. Chief among them: it's hard to identify which records or job titles are permanent staff positions vs temporary, contract, etc. expenses without manually checking each of the hundreds of grouped values in the "purpose" column, seeing which dates and frequencies they appear, and then using best judgement/assumptions to further standardize or filter. We weren't feeling confident in the likelihood that the results would be accurate due to all of the factors above.
+
+As an alternate method, we thought about just looking at a percent change in staff salaries year over year and comparing that to national trends in wage growth. However, that would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
+
+After doing further research, even the Congressional Research Service has highlighted the difficulty and data concerns they ran into when trying to use publicly available data to perform similar calculations to ours. They ultimately had to rely on LegiStorm data, and even then listed quite a number of "data concerns" that likely affect the accuracy of their own findings. Here's the report: https://crsreports.congress.gov/product/pdf/R/R44323
 
 This is a real pain to deal with, it's almost like Congress wants us to stay out of it! 

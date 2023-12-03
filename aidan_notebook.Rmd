@@ -780,10 +780,58 @@ spend_by_office |>
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
-```{r}
-# Put code to here
 
-# Display results of code below this codeblock
+```{r}
+
+details_dmv_staff_pay <- dmv_spend_with_member_info %>%
+  filter(category == "PERSONNEL COMPENSATION") %>%
+  filter(office_year >= 2018) %>%
+  # exclude interns, temporary and part-time employees and exclude total/subtotal rows 
+  filter(program != "INTERN ALLOWANCES") %>%
+  filter(purpose != "PERSONNEL COMPENSATION TOTALS:" & purpose != "TEMPORARY EMPLOYEE" & purpose != "PAID INTERN" & purpose != "PART-TIME EMPLOYEE (OTHER COMPENSATION)" & purpose != "PART-TIME EMPLOYEE (OTHER COMPENSATION)" & purpose != "PART-TIME EMPLOYEE") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -start_date, -end_date, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+
+details_dmv_staff_pay
+  
+  
+
+```
+
+
+```{r}
+
+details_dmv_staff_pay %>%
+  group_by(office_year, payee) %>%
+  summarise(amount = sum(amount))
+
+```
+
+
+
+```{r}
+# Aya's work
+
+staff_pay <- totals_dmv_spend |> 
+  filter(category == "PERSONNEL COMPENSATION") |> 
+  group_by(program, year) |> 
+  summarize(congress_average = sum(amount)/n())
+
+standard_staff_pay <- staff_pay |> 
+  filter(program != "INTERN ALLOWANCES")
+
+national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names()
+
+staff_plus_national <- standard_staff_pay |> left_join(national_wages, join_by(year))
+
+staff_plus_national |> 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = congress_average), color= "red")+
+  geom_line(aes(y = index), color = "blue") +
+  labs(x="Year",
+       y="Amount Paid",
+       title="",
+       caption="source: ProPublica") +
+  theme_minimal()
 
 ```
 
