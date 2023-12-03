@@ -702,7 +702,18 @@ category_by_year |>
   labs(x="Year",
        y="Amount Spent")
 
-# The scales being the same doesn't work, so separating them is the best way to compare.
+# Because personnel compensation is so much greater than all other categories, it's throwing off the scale of the visualization. Let's remove it and look at the other 8 categories side by side. 
+
+category_by_year |> 
+  filter(purpose != "PERSONNEL COMPENSATION TOTALS:")|> 
+  ggplot() +
+  geom_line(aes(x=office_year, y=total_spend))+
+  facet_wrap(~purpose) +
+  labs(x="Year",
+       y="Amount Spent")
+
+
+# We can also look more closely at all of the 9 categories.
 
 category_by_year |> 
   filter(purpose == "PERSONNEL COMPENSATION TOTALS:") |> 
