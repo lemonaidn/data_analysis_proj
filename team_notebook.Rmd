@@ -352,6 +352,8 @@ house_spend_18_22 <- house_spend_18_22 %>%
   
 # write the dataframes to csv in order to skip the cleaning process moving forward 
 
+write_csv(dmv_spend_with_member_info, "data/dmv_spend_with_member_info.csv")
+
 write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
 
 write_csv(house_spend_18_22, "data/house_spend_18_22.csv")
@@ -838,6 +840,12 @@ spend_by_office |>
 * **Question**: Has staff pay kept on pace with wage growth nation-wide? The Federal Times has reported on this question, but we think it would be well-suited for data visualization.
 
 ```{r}
+
+# If running "post-clean," read back in dmv_spend_with_member_info
+
+dmv_spend_with_member_info <- read_csv("data/dmv_spend_with_member_info.csv")
+
+# Look at employee compensation in the house for full-time staff. 
 
 details_dmv_staff_pay <- dmv_spend_with_member_info %>%
   filter(category == "PERSONNEL COMPENSATION") %>%
