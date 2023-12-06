@@ -791,7 +791,6 @@ category_by_year |>
 
 # Maybe an overlay of all of the above in Datawrapper would be the best way to look at this. We will explore that for the next milestone.
 
-
 ```
 
 ### Question 4
@@ -831,8 +830,6 @@ spend_by_office <- totals_dmv_spend |>
 spend_by_office |> 
    arrange(office_total)
  
-
-
 ```
 
 ### Question 5
@@ -972,8 +969,6 @@ national_wages_pct_change <- national_wages %>%
 national_wages_pct_change
 ```
 
-
-
 ```{r}
 # bind the data
 
@@ -997,6 +992,97 @@ ggplot(wage_comparison_pct_change_df, aes(x = year, y = pct_change, color = data
 # Display the plot
 print(ggplot())
 ```
+
+### Question 6: What's up with Intern Allowances? 
+
+* **Question**: We excluded Intern Allowances very early in our analysis to only look at regular member expenses. So we decided to go back and take a look to see what patterns we could observe about intern pay. 
+
+* **Analysis summary**: Through this analysis we found that the House had strict caps on intern pay. In 2019, it was $20K total; in 2020 & 2021, $25K; in 2022, $35K. Strangely, we didn't find any Intern Allowances for 2018. 
+
+Many reps appear to be maximizing this line item, which makes sense to us. We did find a curious outlier. In 2019, Rep. John Carter from Texas spent $29,813.33 on interns, above the set limit of $20K. We could not figure out why that may be with the information in the dataset, and think it could deserve a closer look via other reporting methods outside of R. 
+
+```{r}
+
+intern_allowances <- house_spend_18_22 |> 
+  filter(program== "INTERN ALLOWANCES") |> 
+  filter(purpose == "INTERN ALLOWANCES TOTALS:") #|> 
+  select(-start_date, -end_date, -sort_sequence, -purpose, -year, -fiscal_year_or_legislative_year)
+
+intern_allowances |> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+# Okay, it looks like in 2022, many offices were spending $35,000 on interns or just a little less. There must have been a cap. Let's look at 2021. 
+
+intern_allowances |> 
+  filter(office_year == 2021)|> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+# Here the cap appears to be $25,0000. Interesting, the limit must have changed. How about 2020? 
+
+intern_allowances |> 
+  filter(office_year == 2020)|> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+# Alright, that year seemed to also be a $25,0000 cap. How about 2019? 
+
+intern_allowances |> 
+  filter(office_year == 2019)|> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+# Huh. Jon Carter spent nearly $30,000 on interns in 2019, when everyone else was spending a maximum of $20,000. Let's look closer at Carter's intern spend in 2019. 
+
+house_spend_18_22 |> 
+  filter(office_year == 2019)|> 
+  filter(bioguide_id == "C001051")|> 
+  filter(purpose == "INTERN ALLOWANCES TOTALS:")
+
+# Why does Carter have 2 entries for quarters 2, 3 & 4 in 2019? We need to so some digging. 
+
+carter <- spend_with_member_info |> 
+  filter(bioguide_id == "C001051")|> 
+  filter(sort_sequence == "DETAIL")|> 
+  filter(program == "INTERN ALLOWANCES")|> 
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", spend_with_member_info$office)))
+
+carter_19 <- carter |> 
+  filter(office_year == 2019)|> 
+  group_by(quarter)|> 
+  summarise(total = sum(amount))
+
+total <- sum(carter_19$total)
+total
+
+# Yeah, still getting almost $30K. I do see 2 purposes - "DISTRICT OFFICE PAID INTERN -" and "PAID INTERN - HOUSE PROGRAM." Let's look at the totals for those. 
+
+carter|> 
+  filter(office_year == 2019)|> 
+  group_by(purpose)|> 
+  summarise(total = sum(amount))
+
+# Nope, in 2019 the purpose for all paid interns was "PAID INTERN - HOUSE PROGRAM." Fascinating! 
+
+# Last but not least, let's look at 2018. 
+
+intern_allowances |> 
+  filter(office_year == 2018)|> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+# There are zero results for 2018! Were interns not paid in 2018? Very weird. 
+
+```
+
+
+
 
 ### Memo as of Saturday December 2nd. 
 
