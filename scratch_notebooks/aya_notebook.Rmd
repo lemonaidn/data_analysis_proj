@@ -645,13 +645,16 @@ category_by_year |>
 
 ```
 
+Printing and reproduction costs skyrocketed between 2021-2022. Is that being driven by a handful of offices or is it a congress-wide trend?
+
 ```{r}
 printing <- spend_with_member_info |> 
   filter(category == "PRINTING AND REPRODUCTION" & sort_sequence == "DETAIL")
 
 printing_by_year <- printing |> 
   group_by(year) |> 
-  summarize(total_spend = sum(amount))
+  summarize(total_spend = sum(amount)) |> 
+  mutate(diff_from_previous_year = total_spend - lag(total_spend))
 
 
 printing_by_year |> 
@@ -661,6 +664,17 @@ printing_by_year |>
        y="Amount Spent",
        title="PRINTING AND REPRODUCTION",
        caption="source: ProPublica")
+
+printing_by_office <- printing |> 
+  filter(year == 2022) |> 
+  group_by(first_name, last_name) |> 
+  summarise(spending = sum(amount))
+
+printing_by_purpose <- printing |> 
+  filter(year == 2022) |> 
+  group_by(purpose) |> 
+  summarise(spending = sum(amount))
+
 ```
 
 ### Question 4
