@@ -330,8 +330,8 @@ V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
 Our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other states. This means we can redo the join now without worrying about the remaining many-to-many issues they're causing since those rows will get filtered out right afterwards
 
 ```{r}
-# Join the member information with our expenses data set using the bioguide id
-# Also add a step so we're only looking at DMV representatives
+# Join the member information with our expenses data set using the bioguide id. Also add a step so we're only looking at DMV representatives. 
+
 dmv_spend_with_member_info <- house_spend_18_22 |> 
   left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
   filter(state == "DC" | state == "VA" | state == "MD")
@@ -349,6 +349,8 @@ house_spend_18_22 <- house_spend_18_22 %>%
   select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
   
 # write the dataframes to csv in order to skip the cleaning process moving forward 
+
+write_csv(spend_with_member_info, "data/spend_with_member_info.csv")
 
 write_csv(dmv_spend_with_member_info, "data/dmv_spend_with_member_info.csv")
 

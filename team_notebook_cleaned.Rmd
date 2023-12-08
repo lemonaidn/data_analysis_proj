@@ -39,13 +39,15 @@ To run data clean, see the notebook "clean_only.rmd" For ease, this analysis wil
 
 ```{r}
 
-# Begin by reading in the data for spending of DMV reps. 
+# Begin by reading in the four dataframes that were created in "clean_only.rmd" 
+
+spend_with_member_info <- read_csv("data/spend_with_member_info.csv")
+
+dmv_spend_with_member_info <- read_csv("data/dmv_spend_with_member_info.csv")
+
+house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
 
 totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
-
-# Glimpse the cleaned details data set
-
-glimpse(totals_dmv_spend)
 
 ```
 ## Do some basic aggregates to make sure that further cleaning isn't needed. 
@@ -635,15 +637,17 @@ print(ggplot())
 
 * **Question**: We excluded Intern Allowances very early in our analysis to only look at regular member expenses. So we decided to go back and take a look to see what patterns we could observe about intern pay. 
 
-* **Analysis summary**: Through this analysis we found that the House had strict caps on intern pay. In 2019, it was $20K total; in 2020 & 2021, $25K; in 2022, $35K. Strangely, we didn't find any Intern Allowances for 2018. 
+* **Analysis summary**: Through this analysis we found that the House had strict caps on intern pay. In 2019, it was $20K total; in 2020 & 2021, $25K; in 2022, $35K. 
 
-Many reps appear to be maximizing this line item, which makes sense to us. We did find a curious outlier. In 2019, Rep. John Carter from Texas spent $29,813.33 on interns, above the set limit of $20K. We could not figure out why that may be with the information in the dataset, and think it could deserve a closer look via other reporting methods outside of R. 
+Many reps appear to be maximizing this line item, which makes sense to us. We did find a curious outlier. In 2019, Rep. John Carter from Texas spent $29,813.33 on interns, above the apparent ceiling of $20K. We could not figure out why that may be with the information in the dataset, and think it could deserve a closer look via other reporting methods outside of R. 
+
+Strangely, we didn't find any Intern Allowances for 2018 when searching by program == INTERN ALLOWANCES. That couldn't be right, so we searched by the purpose column instead and voilà. So the house must have made a change in FY19 around how intern expenses were categorized in these reports. Strangely, the amount that reps spend on interns in 2018 appeared to vary widely and one rep, Thomas Massie from Kentucky, spend upwards of $43K on interns that year. In 2018 a total of 11 reps sepnd over $20K on interns, which would become the spending apparent cap on intern pay in the following year. 
 
 ```{r}
 
 intern_allowances <- house_spend_18_22 |> 
   filter(program== "INTERN ALLOWANCES") |> 
-  filter(purpose == "INTERN ALLOWANCES TOTALS:") #|> 
+  filter(purpose == "INTERN ALLOWANCES TOTALS:") |> 
   select(-start_date, -end_date, -sort_sequence, -purpose, -year, -fiscal_year_or_legislative_year)
 
 intern_allowances |> 
@@ -682,30 +686,19 @@ house_spend_18_22 |>
   filter(bioguide_id == "C001051")|> 
   filter(purpose == "INTERN ALLOWANCES TOTALS:")
 
-# Why does Carter have 2 entries for quarters 2, 3 & 4 in 2019? We need to so some digging. 
+# Why does Carter have 2 entries for quarters 2, 3 & 4 in 2019? We need to so some digging by looking at the detail level of his intern expenditures in 2019
 
-carter <- spend_with_member_info |> 
+carter_19 <- spend_with_member_info |> 
   filter(bioguide_id == "C001051")|> 
   filter(sort_sequence == "DETAIL")|> 
   filter(program == "INTERN ALLOWANCES")|> 
-  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", spend_with_member_info$office)))
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", office)))|> 
+  filter(office_year == 2019)
 
-carter_19 <- carter |> 
-  filter(office_year == 2019)|> 
-  group_by(quarter)|> 
-  summarise(total = sum(amount))
-
-total <- sum(carter_19$total)
+total <- sum(carter_19$amount)
 total
 
-# Yeah, still getting almost $30K. I do see 2 purposes - "DISTRICT OFFICE PAID INTERN -" and "PAID INTERN - HOUSE PROGRAM." Let's look at the totals for those. 
-
-carter|> 
-  filter(office_year == 2019)|> 
-  group_by(purpose)|> 
-  summarise(total = sum(amount))
-
-# Nope, in 2019 the purpose for all paid interns was "PAID INTERN - HOUSE PROGRAM." Fascinating! 
+# Yeah, still getting almost $30K. And after manually scanning, it doesn't look like any of these expenses are duplicates. 
 
 # Last but not least, let's look at 2018. 
 
@@ -715,7 +708,30 @@ intern_allowances |>
   summarise(annual_intern_spend = sum(amount))|> 
   arrange(desc(annual_intern_spend))
 
-# There are zero results for 2018! Were interns not paid in 2018? Very weird. 
+# There are zero results for 2018! Were interns not paid in 2018? Very weird. Did something change that year about how the House tracked intern expenses? Let's look at the detail level from 2018. 
+
+detail_18 <- spend_with_member_info |> 
+  filter(sort_sequence == "DETAIL")|> 
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", office)))|> 
+  filter(office_year == 2018)
+
+interns_18 <- detail_18 |> 
+  filter(str_detect(purpose, "INTERN"))
+
+# AHA! Some shuffling of how intern expenses are categorized definitely happened in after 2018. Starting in 2019, there is  program called INTERN ALLOWANCES. But in 2018, the intern expenses can be found by using the purpose column instead. In 2018, the program column for rows with intern expenses may GENERAL EXPENDITURES, SALARIES OFFICERS & EMPLOYEES, and more. So that's fun. Let's try again to total intern expenses by House member using purpose instead of program. 
+
+interns_18  |> 
+  group_by(bioguide_id, first_name, last_name) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(desc(annual_intern_spend))
+
+massie_interns_18 <- interns_18  |> 
+  filter(bioguide_id == "M001184")
+
+massie_total_18 <- sum(massie_interns_18$amount)
+massie_total_18
+
+# Fascinating. Now we see that in 2018 reps such as Thomas Massie (R-KY) spent over $43K on interns. That's a lot higher! The House must have cracked down on paid intern spend after that year, it would be really interesting to figure out what happened. 
 
 ```
 
