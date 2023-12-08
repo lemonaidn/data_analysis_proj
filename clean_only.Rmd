@@ -1,0 +1,396 @@
+---
+title: "Data Analysis Team 3 - CLEAN ONLY NO ANALYSIS"
+author: "Aidan Hughes, Aya Hussein, Caley Fox Shannon"
+date: "`r Sys.Date()`"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction 
+
+This notebook contains only the clean needed for our group analysis of House of Representatives expenditures. For analysis, see "team_notebook.rmd" 
+
+## Load libraries
+
+Loading required libraries for this analysis.
+
+```{r echo=FALSE, message=FALSE}
+
+# Turn off scientific notation. 
+
+options(scipen=999)
+
+# Load libraries. 
+
+library(tidyverse)
+library(readr)
+library(scales)
+library(janitor)
+
+```
+
+## Load and Cleaning Data
+
+In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data. 
+
+```{r}
+
+# Load the data from ProPublica.
+
+# In the sort_sequence row, we will ONLY be using "SUBTOTAL" rows, filtering out specific expenses (DETAIL) and GRAND TOTAL FOR ORGANIZATION so that the dataset is small enough to be agile and does not have redundancies that will adversely impact the math we're looking to do. 
+
+# "DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011
+
+# YEAR is not always populated. When it is, it seems to pertain to the filing year rather than the expense year.
+
+# QUARTER is sometimes unpopulated, sometimes populated with a numeric, and sometimes populated with a chr (eg "Q2" instead of just "2").
+
+# DATE col values aren't always populated (within the same df some rows are and some rows aren't). Can't use it to extract quarter and year values.
+
+# Cleaned datatypes in columns one-by-one while exploring the distinct issues across different quarters. We will make this more concise in the near future by using regex and a for loop to iterate across a list of dfs and make the year and quarter updates. We'll then only need to apply additional fixes to q4_2022, q4_2021, and q3_2018. 
+
+q4_2022 <- read_csv("data/2022Q4.csv") %>%
+  mutate(YEAR = as.numeric(2022)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("4")) %>%
+  rename(start_date = perform_start_dt,
+         end_date = perform_end_dt)
+  
+
+q3_2022 <- read_csv("data/2022Q3.csv") %>%
+  mutate(YEAR = as.numeric(2022)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("3"))
+
+
+q2_2022 <- read_csv("data/2022Q2.csv") %>%
+  mutate(YEAR = as.numeric(2022)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("2"))
+
+
+q1_2022 <- read_csv("data/2022Q1.csv")%>%
+  mutate(YEAR = as.numeric(2022)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("1"))
+# Need to populate the QUARTER column
+
+q4_2021 <- read_csv("data/2021Q4.csv") %>%
+  mutate(YEAR = as.numeric(2021)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("4"))
+# parsing errors in row 27712:
+# row   col expected        actual     file 
+#  <int> <int> <chr>           <chr>      <chr>
+#1 27712    12 date in ISO8601 4-Jul-21   ""   
+#2 27712    14 15 columns      14 columns ""
+
+# Needed to manually add the value 2021-07-04 to q4_2021[27711,12]
+q4_2021[27711,12] = as.Date("2021-07-04")
+
+q3_2021 <- read_csv("data/2021Q3.csv") %>%
+  mutate(YEAR = as.numeric(2021)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("3"))
+
+q2_2021 <- read_csv("data/2021Q2.csv")%>%
+  mutate(YEAR = as.numeric(2021)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("2"))
+# Need to populate the QUARTER column
+
+q1_2021 <- read_csv("data/2021Q1.csv")%>%
+  mutate(YEAR = as.numeric(2021)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("1"))
+
+q4_2020 <- read_csv("data/2020Q4.csv")%>%
+  mutate(YEAR = as.numeric(2020)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("4"))
+
+
+q3_2020 <- read_csv("data/2020Q3.csv")%>%
+  mutate(YEAR = as.numeric(2020)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("3"))
+
+
+q2_2020 <- read_csv("data/2020Q2.csv")%>%
+  mutate(YEAR = as.numeric(2020)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("2"))
+
+
+q1_2020 <- read_csv("data/2020Q1.csv")%>%
+  mutate(YEAR = as.numeric(2020)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("1"))
+# parsing errors in :
+#      row   col expected actual file 
+#    <int> <int> <chr>    <chr>  <chr>
+# 1 121790    16 a double FISC   ""   
+# 2 121791    16 a double FISC   ""   
+# 3 121792    16 a double FISC   ""   
+# 4 121793    16 a double FISC   ""   
+# 5 132094    16 a double FISC   ""   
+# 6 132095    16 a double FISC   ""   
+# 7 132096    16 a double FISC   ""   
+# 8 132097    16 a double FISC   ""   
+# 9 132098    16 a double FISC   ""   
+#10 132099    16 a double FISC   ""   
+#11 132100    16 a double FISC   ""   
+#12 132101    16 a double FISC   ""   
+#13 132102    16 a double FISC   ""   
+#14 132103    16 a double FISC   ""   
+#15 132104    16 a double FISC   ""   
+#16 132105    16 a double FISC   ""   
+#17 132106    16 a double FISC   ""   
+#18 132107    16 a double FISC   ""   
+#19 132108    16 a double FISC   ""   
+#20 132109    16 a double FISC   ""
+
+# The parsing issue is that "FISC" is showing up in 20 rows in the YEAR column. R has changed those values to NULL by default.
+# No further action required on the parsing issue
+# what does the id column here refer to since there's also already a bioguide_id?
+
+
+q4_2019 <- read_csv("data/2019Q4.csv")%>%
+  mutate(YEAR = as.numeric(2019)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("4"))
+
+
+q3_2019 <- read_csv("data/2019Q3.csv")%>%
+  mutate(YEAR = as.numeric(2019)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("3"))
+
+
+q2_2019 <- read_csv("data/2019Q2.csv")%>%
+  mutate(YEAR = as.numeric(2019)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("2"))
+# QUARTER col is in format "Q2" rather than just "2"
+
+q1_2019 <- read_csv("data/2019Q1.csv")%>%
+  mutate(YEAR = as.numeric(2019)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("1"))
+
+
+q4_2018 <- read_csv("data/2018Q4.csv")%>%
+  mutate(YEAR = as.numeric(2018)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("4"))
+
+
+q3_2018 <- read_csv("data/2018Q3.csv") %>%
+  mutate(YEAR = as.numeric(2018)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("3"))
+# Parsing issues:
+#    row   col expected        actual      file 
+#  <int> <int> <chr>           <chr>       <chr>
+# 1 90121    11 date in ISO8601 22-AUG-1818 "" 
+
+# Need to manually update q3_2018[90120, 11] to 2018-08-22
+q3_2018[90120, 11] = as.Date("2018-08-22")
+
+q2_2018 <- read_csv("data/2018Q2.csv")%>%
+  mutate(YEAR = as.numeric(2018)) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("2"))
+
+q1_2018 <- read_csv("data/2018Q1.csv")%>%
+  mutate(YEAR = as.numeric("2018")) %>%
+  clean_names() %>%
+  mutate(quarter = as.numeric("1"))
+
+```
+
+
+```{r}
+
+# Bind dataframes into one combined dataframe  
+
+house_spend_18_22 <- bind_rows(list(q4_2022, q3_2022, q2_2022, q1_2022, q4_2021, q3_2021, q2_2021, q1_2021, q4_2020, q3_2020, q2_2020, q1_2020, q4_2019, q3_2019, q2_2019, q1_2019, q4_2018, q3_2018, q2_2018, q1_2018))
+
+# Number of rows is 2,185,315
+ 
+unique(house_spend_18_22$sort_sequence)
+
+house_spend_18_22 <- house_spend_18_22 %>%
+  mutate(office_year = as.numeric(sub(".*?(\\d{4}).*", "\\1", house_spend_18_22$office)))
+
+glimpse(house_spend_18_22)
+
+```
+
+# Bring in ProPublica's Congress API
+
+In this section, we installed the "ppcong" package in order to get information on individual members of the House of Representatives.
+
+```{r}
+# Install necessary packages (remove # if libraries are needed)
+
+#remotes::install_github("mkearney/dapr")
+#remotes::install_github("mkearney/tfse")
+#remotes::install_github("mkearney/ppcong")
+
+# Load ppcong library 
+
+library(ppcong)
+
+## Save API key for use in ppcong. Data in parentheses can be replaced by another individual API key. 
+
+ppc_api_key("yosRYPlksfSYRNTfhgot3bNTzvYQNZ8ztredZ7da", set_renv = TRUE) #this is Aya's api key
+
+# Bring in information on House members for the 115th, 116th and 117th congresses, which cover from January 2017 to January 2023, as our expenditure dataset covers 2018 to 2022.
+
+h115 <- ppc_members(congress = "115", chamber = "house")
+h116 <- ppc_members(congress = "116", chamber = "house")
+h117 <- ppc_members(congress = "117", chamber = "house")
+```
+
+# Bind API dataframes 
+
+We bound the three API datasets that consist of members of the House from the last three Congresses to get one large dataset that consists of all of them. Then, we cleaned the dataset to only include the columns we need, which are id, names, gender, party, state and district.
+
+This dataset included some duplicates due to certain members serving on more than one Congress. To address this, we used the "distinct" function.
+
+Then, we joined our Expenses dataset with the cleaned House members dataset.
+
+```{r}
+
+# Bind dataframes from the three Congresses
+members_18_22 <- bind_rows(list(h115, h116, h117))
+
+# Select the columns that we need and then get rid of any duplicates
+cleaned_members_18_22 <- members_18_22 |> 
+  select(id, first_name, last_name, gender, party, state, district) |> 
+  distinct()|> 
+  mutate(first_name = str_to_upper(first_name))|>  
+  mutate(last_name = str_to_upper(last_name))
+
+```
+
+
+```{r}
+# Join the member information with our expenses dataset using the bioguide id
+spend_with_member_info <- house_spend_18_22 |> 
+  left_join(cleaned_members_18_22, by = c("bioguide_id" = "id"))
+
+```
+
+Getting a many-to-many issue. Let's try to find the source
+
+```{r}
+
+cleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+
+```
+
+Let's check a few examples from the list above to see why there are duplicates
+
+A000367 - Justin Amash switched from R to I which is why he's showing up twice
+B001296 - Brendan Boyle switched districts which is why he's showing up twice
+C001090 - MATT CARTWRIGHT switched districts which is why he's showing up twice
+D000482 - MIKE DOYLE switched districts which is why he's showing up twice
+
+Let's remove districts from the ppcong data before removing dupes. We shouldn't need districts to answer the questions we're pursuing for this project. Hopefully that'll only leave us with Amash showing up twice.
+
+
+```{r}
+recleaned_members_18_22 <- members_18_22 |> 
+  select(id, first_name, last_name, gender, party, state) |> 
+  distinct()|> 
+  mutate(first_name = str_to_upper(first_name))|>  
+  mutate(last_name = str_to_upper(last_name))
+```
+
+
+```{r}
+recleaned_members_18_22 %>%
+  group_by(id) %>%
+  summarise(instances = n()) %>%
+  arrange(desc(instances))
+```
+
+M001201 - PAUL MITCHELL switched from R to I with a few weeks left in his term in Dec 2020
+V000133 - JEFFERSON VAN DREW switched from D to R in Jan 2020
+
+Our focus in this project will be on DMV representatives, and (gracefully) Mitchell, Van Drew, and Amash were all from other states. This means we can redo the join now without worrying about the remaining many-to-many issues they're causing since those rows will get filtered out right afterwards
+
+```{r}
+# Join the member information with our expenses data set using the bioguide id
+# Also add a step so we're only looking at DMV representatives
+dmv_spend_with_member_info <- house_spend_18_22 |> 
+  left_join(recleaned_members_18_22, by = c("bioguide_id" = "id")) |>
+  filter(state == "DC" | state == "VA" | state == "MD")
+
+# create a dmv_df that's only the subtotals
+  
+totals_dmv_spend <- dmv_spend_with_member_info %>%
+  filter(sort_sequence == "SUBTOTAL") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+
+# do the same thing for house_spend_18_22, which we will also use later. 
+
+house_spend_18_22 <- house_spend_18_22 %>%
+  filter(sort_sequence == "SUBTOTAL") %>%
+  select(-organization_code, -program_code, -budget_object_class, -data_source, -document, -vendor_id, -payee, -budget_object_code, -transcode, -recordid, -id, -sort_subtotal_description, -transaction_date, -date)
+  
+# write the dataframes to csv in order to skip the cleaning process moving forward 
+
+write_csv(dmv_spend_with_member_info, "data/dmv_spend_with_member_info.csv")
+
+write_csv(totals_dmv_spend, "data/totals_dmv_spend.csv")
+
+write_csv(house_spend_18_22, "data/house_spend_18_22.csv")
+
+```
+
+Data dictionary questions:
+
+"DATE" column seems to pertain to the date the expense was filed, whereas the start and end date cols seem to pertain to the dates of the expenses themselves. for example, q4_2019 has expenses that go back all the way to 2011.
+
+  - Confirm "DATE" is filing date - CONFIRMED
+  - Why does q4_2019 have expenses that go back all the way to 2011? - SOMETIMES A MEMBER'S OFFICE WILL REALIZE THERE WAS A BOOKEEPING ERROR EVEN FURTHER BACK THAN THE THREE YEAR LIMIT MENTIONED IN THE PROPUBLICA ARTICLE. OTHER TIMES, A VENDOR WILL IDENTIFY A BOOKEEPING ERROR FROM YEARS PRIOR ON THEIR END AND NOTIFY THE MEMBER'S OFFICE ABOUT IT, AND THEN THE MEMBER'S OFFICE WILL UPDATE THEIR BOOKS TOO
+
+YEAR seems to pertain to the filing year rather than the expense year.
+
+  - Confirm? - CONFIRMED
+
+
+The start and end date cols seem to pertain to the dates of the expenses themselves.
+
+  - Confirm? - CONFIRMED
+  
+When the amount is negative, what does that signify?
+
+- THIS IS WHEN THE MEMBER'S OFFICE IS REBATED FOR EXPENSES. FOR EXAMPLE, MAYBE THE OFFICE CANCELED A $1MIL CONTRACT WITH A VENDOR AFTER ONLY SPENDING 200K, SO A -800K RECORD WILL APPEAR.
+
+## Deliverable 2:
+
+# Loads and cleans the core data set to prepare for analysis.
+
+- Done (see above)
+
+# Shows basic exploratory analysis to demonstrate an understanding of the dataset, including the number of rows and columns, any obvious limitations or flaws and any reasons why it might not be able to answer the questions you've posed last week.
+
+- Done, see code below. After extensive head scratching, we realize that OFFICIAL EXPENSES OF MEMBERS and INTERN ALLOWANCES were duplicative of the other 9 values in the "purpose" column. These are the 2 values in the "program column" which was a dead giveaway. Overall, this is a frustrating dataset at first blush because you don't know what column is the most accurate representation of what we would generally call a spending category. 
+
+
+# Describe the limits of the data in terms of timeframe, what is and is not included and any codes or other information you'd need to find definitions for, and what you've done to better define it.
+
+- Because members can report expenses late (in some cases, years later), it's very possible that we don't actually have all of the expenses that occurred during the years we're interested in. The expenditure data for Q1 2023 had an "id" column separate from the bioguide_ID column and it's unclear what that pertains to. We likely don't need it for our analyses though. Better definitions or a data dictionary for columns like "budget object class" and "budget object code" would be helpful, but we might not need that information for our analyses either. We have already done work to better-define the various date columns present in the data (detailed earlier in this notebook) and to understand the records with negative amount values.
+
+##### FOR ANALYSIS, SEE "team_notebook.rmd" #### 

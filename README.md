@@ -18,3 +18,7 @@ House member data originates from ProPublica's Congress API https://projects.pro
 Request an API key here: https://www.propublica.org/datastore/api/propublica-congress-api
 
 National Average Wage Index data was extacted from a pdf copy of https://www.ssa.gov/oact/cola/AWI.html#Series using tabula
+
+To see full clean and join, run "clean_only.rmd_"
+
+For analysis, run "team_notebook" 
