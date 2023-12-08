@@ -645,6 +645,24 @@ category_by_year |>
 
 ```
 
+```{r}
+printing <- spend_with_member_info |> 
+  filter(category == "PRINTING AND REPRODUCTION" & sort_sequence == "DETAIL")
+
+printing_by_year <- printing |> 
+  group_by(year) |> 
+  summarize(total_spend = sum(amount))
+
+
+printing_by_year |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PRINTING AND REPRODUCTION",
+       caption="source: ProPublica")
+```
+
 ### Question 4
 
 * **Question**: Which offices in the House are spending the least annually? There may be an interesting story behind lawmakers who have shown restraint in spending their budgets compared to colleagues.
@@ -717,4 +735,6 @@ Pros and cons of the data. Discuss both the strengths and limitations of the dat
 How you would verify your findings. Identify the specific reporting and data steps would you take and the types of information you would use to determine whether the results of your analysis are accurate and significant. If your analysis suggests fault or issues of accountability on the part of public or private figures, indicate whom you would need to contact for response to ensure that your reporting was fair and accurate.
 Bringing it home. Indicate the specific steps you would need to take to finish reporting the story. Include the people you would contact and, if relevant, the places you would visit. Indicate how you would make the story real to readers.
 Editors are not interested in process. Don’t fill the memo with what steps you took.
+
+
 
