@@ -350,7 +350,7 @@ party_spending_w_rep_numbers|>
 
 * **Question**: Did the most common categories of spending change during COVID? For example, were members spending less on office equipment while everyone was working remotely? Or did they perhaps spend more on franked mail to communicate with constituents during isolation?
 
-* **Analysis summary**: We found that during the height of the pandemic in 2020, DMV representatives spent way less on travel and rent, communication utilities. Spending on supplies and materials peaked in 2020, while franked mail was high in 2018, 2020 and 2022 (could be related to them being election years). Spending on printing and reproduction, as well as personnel compensation have all been rising every year. On the other had, spending on equipment has dropped dramatically.
+* **Analysis summary**: We found that during the height of the pandemic in 2020, DMV representatives spent way less on travel as well as rent, communication and utilities. Spending on supplies and materials peaked in 2020; we hypothesize that the switch to remote work could have necessitated more supplies for staffers. Franked mail was high in 2018, 2020 and 2022, which could be related to them being election years). Spending on printing and reproduction, as well as personnel compensation have all been rising every year. On the other had, spending on equipment has dropped dramatically.
 
 
 ```{r}
@@ -460,7 +460,6 @@ category_by_year |>
        title="TRAVEL",
        caption="source: ProPublica")
 
-# Maybe an overlay of all of the above in Datawrapper would be the best way to look at this. We will explore that for the next milestone.
 
 ```
 
@@ -468,12 +467,9 @@ category_by_year |>
 
 * **Question**: Let's get a sense of the high highs and low lows. What are the biggest expenses for DMV reps? Who is the most frugal spender? 
 
-
 * **Analysis summary**: We know from totals_dmv_spend_purpose that personnel compensation makes up the lion's share (78%) of spending by Congress. The top expense from DMV Reps between 2018 and 2022 is from Elaine G. Luria, a Democrat from Virginia. In 2022, her staffers made at a total of $573,977.80. 
 
 As for the lowest annual spender in the DMV, it appears at first blush to be Kweisi Mfume of Maryland, who spent $729,418.30 in 2020. That's basically a quarter million less than even the next lowest annual spend, which was Donald Beyer's $986,166.50 in 2018. But wait! A Google search tells us that Mfume was sworn in on May 5, 2020, after a special election for the seat of the late Rep. Elijah Cummings. So the honor in fact goes to Rep Don Beyer of Virginia after all. 
-
-## What are the highest expenses in the dataset? 
 
 ```{r}
 
@@ -584,7 +580,7 @@ cleaned_details_dmv_staff_pay
 
 national_wages <- read_csv("data/national_average_wage_index.csv") |> clean_names() %>%
   rename("avg_salary" = "index") %>%
-  mutate(job_title = "national_wages") %>%
+  mutate(job_title = "NATIONAL WAGES") %>%
   select(year, job_title, avg_salary) %>%
   filter(year >= 2018)
 
@@ -765,8 +761,6 @@ massie_total_18
 # Fascinating. Now we see that in 2018 reps such as Thomas Massie (R-KY) spent over $43K on interns. That's a lot higher! The House must have cracked down on paid intern spend after that year, it would be really interesting to figure out what happened. 
 
 ```
-
-
 
 
 ### Memo as of Saturday December 2nd. 
