@@ -35,11 +35,13 @@ library(janitor)
 
 ## Load and Cleaning Data. 
 
-To run data clean, see the notebook "clean_only.rmd" For ease, this analysis will begin with a read in of the cleaned dataframes. 
+To run the full data clean, see the notebook "clean_only.rmd" For ease, this analysis will begin with a read in of the cleaned dataframes. 
 
 ```{r}
 
 # Begin by reading in the four dataframes that were created in "clean_only.rmd" 
+
+# Spend_with_member_info.csv is too large to push via GitHub, please see WeTransfer and drop into data folder for this repository on desktop. 
 
 spend_with_member_info <- read_csv("data/spend_with_member_info.csv")
 
@@ -83,18 +85,15 @@ totals_dmv_spend_purpose
 
 # What's the sum of all of the remaining 9 categories? Does it equal the sum of OFFICIAL EXPENSES OF MEMBER TOTALS and INTERN ALLOWANCES? 
 
-totals_dmv_spend_purpose |> 
-  summarise(total = sum(total_expenses))
-
-without_official_interns <- 136865420	
-
+without_official_interns <- sum(totals_dmv_spend_purpose$total_expenses)
+	
 remainder <- (without_official_interns - official - interns)
 
 remainder
 
-# I am not sure why we have $0.10 left over. Upon manually checking the math for the without_official_interns figure, it was actually #136,865,420.10. So we're good! 
+# We have an extremely small decimal here that would have been rounded to zero for accounting purposes. So that appears to be a total redundancy after all. 
 
-# Let's make this same change in the totals_dmv_spend so that we are permanently excluding these redundancies when working with that dataframe. 
+# Let's resave totals_dmv_spend so that we are permanently excluding these redundancies when working with that dataframe. 
 
 totals_dmv_spend <- totals_dmv_spend %>%
   filter(purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS:")|> 
@@ -109,12 +108,10 @@ totals_dmv_spend_purpose <- totals_dmv_spend %>%
 
 totals_dmv_spend_purpose 
 
-# Let's get a percent of total column as well. 
+# Let's get a percent of total column as well to get a sense of where reps are spending the most and least across the 9 categories. 
 
 totals_dmv_spend_purpose <- totals_dmv_spend_purpose |> 
   mutate(pct_of_total = (total_expenses/(sum(total_expenses)))*100)
-         
-# Looks good! 
 
 ```
 
@@ -123,15 +120,15 @@ totals_dmv_spend_purpose <- totals_dmv_spend_purpose |>
 
 * **Question**: Do US reps from DC, Maryland and Virginia spend less on average than their colleagues? It seems logical that they would spend significantly less at least on travel, but is that the case? If so, does that mean they spend less overall, or do they outspend their peers in other categories?
 
-* **Analysis summary**: We found that compared to the average in Congress, reps from the DMV spend $15,254.09 less per member each year. We also looked at their travel spending, and found that they spent on average $32,870.38 less annually per year. That means they probably outspend their peers in some other categories, but at least they spend less overall as we expected. 
+* **Analysis summary**: Overall, reps spent an average of $1.2 to nearly $1.7 million each year. Their budgets steadily increased year over year between 2018 and 2022. 
 
+We found that compared to the average in Congress, reps from the DMV spend $15,254.09 less each year. We also looked at their travel spending, and found that they spent on average $32,870.38 less annually per year. That means they probably outspend their peers in some other categories, but at least they spend less overall as we expected. 
+
+So we looked at how DMV reps allocate their budget, by percent, compared to the national averages. And it turns out that they spend 2.5% more of their budget on compensation and almost half a percent more on rent, communication and utilities. It would be interesting to look at these numbers more closely. Do DMV reps pay for more office space near the capital, which we know to be higher than national averages? The same question goes for salary, do they have to pay staff more because so many live full time in the DMV where cost of living is high? In another analysis, it may be interesting to compare spending by DMV reps to those from other high cost-of-living areas like the Bay or NYC. 
 
 ```{r}
-# Read back in data for house spend. 
 
-house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
-
-# Clean it the same way we did for the DMV members. 
+# We need to look at the overall house spend but first let's rid it of the redundancies we found above with Official Member Expenses and Intern Allowance.  
 
 house_spend_18_22 <- house_spend_18_22 |> 
   filter(purpose != "OFFICIAL EXPENSES OF MEMBERS TOTALS:")|> 
@@ -142,7 +139,8 @@ house_spend_18_22
 
 
 ```{r}
-# Calculate avg spend for all members, not just those in the DMV. First, confirm that there are 435 unique members per year
+
+# Calculate average spend for all members, not just those in the DMV. First, filter out non-member offices and committees to confirm that there are 435 unique members per year. 
 
 house_spend_18_22 <- house_spend_18_22 %>%
   filter(!is.na(bioguide_id))
@@ -154,7 +152,7 @@ house_spend_18_22 %>%
   group_by(office_year) %>%
   summarise(count = n())
 
-# Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id. Not sure why that is, but we'll need to divide by the numbers above to find our average rather than 435 for every year. 
+# Surprisingly, there are more than 435 members each year even after we've filtered out records without a bioguide_id and by the office_year (which is intended to avoid any confusion about offices changing hands in January). But we do know that sometimes reps pass away, are appointed to other positions, or leave their seats for other reasons and are replaced. So we'll need to divide by the numbers above to find our average rather than 435 for every year. 
 
 house_spend_18_22_totals <- house_spend_18_22 %>%
   group_by(year) %>%
@@ -207,7 +205,7 @@ average_total_difference
 
 ```{r}
 
-# Now let's test the hypothesis that DMV REPS probably spend less on transportation than other members do. 
+# Now let's test the hypothesis that DMV reps probably spend less on transportation than other members do. 
 
 house_spend_18_22_travel <- house_spend_18_22 %>%
   filter(purpose == "TRAVEL TOTALS:") %>%
@@ -247,15 +245,42 @@ average_difference
 
 ```
 
+```{r}
+# Let's look at spending by category to figure out where DMV reps are actually outspending their colleagues. Because we already have totals_dmv_spend_purpose, we'll create an analogous df for the house to compare spending by percent allocation across the 9 categories.
+
+house_spend_18_22_purpose <- house_spend_18_22 %>%
+  group_by(purpose) %>%
+  summarise(house_total_expenses = sum(amount)) %>%
+  arrange(desc(house_total_expenses))|> 
+  mutate(house_pct_of_total = (house_total_expenses/(sum(house_total_expenses)))*100)
+
+totals_dmv_spend_purpose <- totals_dmv_spend_purpose |> 
+  rename(dmv_total_expenses = total_expenses)|> 
+  rename(dmv_pct_of_total = pct_of_total)
+
+# Join to compare side by side.  
+
+category_comparison <- house_spend_18_22_purpose |> 
+  left_join(totals_dmv_spend_purpose, join_by(purpose))
+
+# Add a column that shows the percent difference between DMV rep and overall rep spending across the categories. 
+
+category_comparison <- category_comparison |> 
+  mutate(dmv_difference = dmv_pct_of_total - house_pct_of_total)
+
+```
+
+
 ### Question 2
 
 * **Question**: Which political party in the DMV does the most spending, and does that change with whether or not that party holds the majority in the House?
 
+* **Analysis summary**: When it comes to overall spending by party, Democratic reps from the DMV in the house are spending way more than Republicans. But that's because more of the 20 total reps are Democrats. In 2018 when Republicans held the majority, the DMV had 8 Republican reps. Since Democrats took the majority from 2019-2022, there have only been 5 Republicans representing the DMV. 
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+We need to look at average spending per member to get a more accurate picture of spending trends, and there we did not find a very strong correlation between a DMV rep's party and whether or not the party was in the majority. Republican reps from the DMV spent more on average than Democrats did in 2018 when they were in the majority, but they also spent more in 2020 and 2021 when they were not. Democratic reps from the DMV outspent DMV Republicans in 2019 and 2022. 
 
 ```{r}
-# First we needed to do a little research about who controlled the House from 2018-2022. It was Republicans in 2018 and Democrats every other year, so we made a simple spreadsheet to import. Let's do that now. 
+# First we needed to do a little research about who controlled the House from 2018-2022. It was Republicans in 2018 and Democrats every other year, so we made a simple spreadsheet to import. 
 
 house_majority <- read_csv("data/house_majority.csv")
 
@@ -268,20 +293,25 @@ totals_dmv_spend
 ```
 
 ```{r}
-# We want to find the number of members each party had in the DMV each year. This will eventually allow us to calculate an average spend by party for each year
+# Look at spending by party each year. 
 
-# first, make a df with one row per member per year, along with their party
+totals_dmv_spend |>
+  filter(office_year >= 2018)|> 
+  group_by(office_year, party, majority_party)|> 
+  summarise(party_spend = sum(amount))
 
+# Clearly Democrats are way outspending Republicans overall. But is that just because there are most Democrats representing the DMV. We need to look at average spending per member. 
+
+# To do that, we have to find the number of members each party had in the DMV each year. We know there are 20 seats total. This will allow us to calculate an average spend by party for each year. First, make a df with one row per member per year, along with their party
 
 all_members_per_year <- totals_dmv_spend %>%
+  filter(office_year >=2018)  %>%
   group_by(office_year,bioguide_id,party) %>%
   summarise()
 
 all_members_per_year
-```
 
-```{r}
-# calculate party members per year
+# Calculate party members per year. 
 
 members_grouped_per_year <- all_members_per_year %>%
   group_by(party, office_year) %>%
@@ -289,12 +319,11 @@ members_grouped_per_year <- all_members_per_year %>%
   arrange(office_year)
 
 members_grouped_per_year
-```
 
-```{r}
-# calculate how much each party spent per year
+# Calculate how much each party spent per year. 
 
 party_spending_annual <- totals_dmv_spend |>
+  filter(office_year >=2018)  %>%
   group_by(party, office_year, majority_party)|>
   summarise(party_spend = sum(amount))|>
   arrange(desc(party_spend)) %>%
@@ -304,15 +333,17 @@ party_spending_annual
 ```
 
 ```{r}
-# join the dfs and calculate an average spend per member for each party per year from 2018 onward
+# Join the dfs and calculate an average spend per member for each party per year.  
 
 party_spending_w_rep_numbers <- party_spending_annual %>%
   left_join(members_grouped_per_year) %>%
   mutate(avg_spend_per_member = party_spend / party_members_per_year) %>%
-  filter(office_year >=2018)  %>%
   arrange(desc(avg_spend_per_member)) 
 
-party_spending_w_rep_numbers
+party_spending_w_rep_numbers|> 
+  select(-party_spend, -party_members_per_year)|> 
+  arrange(office_year)
+
 ```
 
 ### Question 3
