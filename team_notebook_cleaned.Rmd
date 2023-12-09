@@ -459,9 +459,59 @@ category_by_year |>
        y="Amount Spent",
        title="TRAVEL",
        caption="source: ProPublica")
-
-
 ```
+
+An interesting result is that the printing and reproduction category increased a lot in 2022. Is this a Congress-wide change or is it just in the DMV?
+
+```{r}
+printing <- spend_with_member_info |> 
+  filter(category == "PRINTING AND REPRODUCTION" & sort_sequence == "DETAIL")
+
+printing_by_year <- printing |> 
+  group_by(year) |> 
+  summarize(total_spend = sum(amount)) |> 
+  mutate(diff_from_previous_year = total_spend - lag(total_spend))
+
+# This shows that there is a $26,170,867 increase in spending in printing and reproduction from 2021 to 2022, more than any other year.
+
+printing_by_year |> 
+  ggplot() +
+  geom_line(aes(x=year, y=total_spend))+
+  labs(x="Year",
+       y="Amount Spent",
+       title="PRINTING AND REPRODUCTION",
+       caption="source: ProPublica")
+
+# The graph also shows this, proving that this is a Congress-wide trend and not just in the DMV.
+```
+
+Is this growth down to a few offices, where some offices are spending more than others? What is most of the money being put towards?
+
+```{r}
+printing_by_office <- printing |> 
+  filter(year == 2022) |> 
+  group_by(first_name, last_name) |> 
+  summarise(spending = sum(amount))
+
+# None of the offices stand out as spending significantly more than the next one. There is a huge range of spending and when arranged, they don't differ too much, which leads us to believe that the increase in spending isn't being carried by a couple of offices.
+
+# However, the highest spenders are the offices that don't belong to a specific representative, which in total was $856K. It's not surprising because there is more than one office grouped into that category. 
+
+printing_nameless_offices <- printing |> 
+  filter(is.na(first_name) & is.na(last_name)) |> 
+  group_by(office) |> 
+  summarise(total_spend = sum(amount))
+
+# Interesting. When I tried to see the offices that didn't have names attached to them to see which ones spent the most on printing, some of the offices were still those that belonged to individual reps, not sure why they didn't get a name when we joined by bioguide id earlier.
+
+printing_by_purpose <- printing |> 
+  filter(year == 2022) |> 
+  group_by(purpose) |> 
+  summarise(spending = sum(amount))
+
+# The spending on printing was mainly for the purposes of frankable and non-frankable printing, as well as advertisements. Frankable printing is the one with the highest spending with $27.5 million, most likely it's for printing mail to go to constituents.
+```
+
 
 ### Question 4
 
