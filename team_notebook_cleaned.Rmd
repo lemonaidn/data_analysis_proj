@@ -463,6 +463,7 @@ category_by_year |>
        caption="source: ProPublica")
 
 ```
+
 We wanted to create a line graph showing the trends over time of all 9 spending categories. We weren't sure how to code that so we asked ChatGPT for help, "I am working in R and using ggplot to visualize a dataset called category_by_year The columns are office_year, purpose and total_spend. I want to create a line graph where the x axis is office_year, the y axis is the  total_spend and there is a line representing each of the nine different values that appear in the purpose column. Write me that code."
  
 It said, "Certainly! You can use ggplot2 in R to create a line graph with separate lines for each unique value in the 'purpose' column. Here's an example code to achieve this:
