@@ -35,7 +35,7 @@ library(janitor)
 
 ## Load and Cleaning Data. 
 
-To run the full data clean, see the notebook "clean_only.rmd" For ease, this analysis will begin with a read in of the cleaned dataframes. 
+To run the full data clean, see the notebook "clean_only.rmd" For ease, this analysis will begin with a read in of the cleaned dataframes.
 
 ```{r}
 
@@ -52,6 +52,7 @@ house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
 totals_dmv_spend <- read_csv("data/totals_dmv_spend.csv")
 
 ```
+
 ## Do some basic aggregates to make sure that further cleaning isn't needed. 
 
 ```{r}
@@ -813,22 +814,5 @@ massie_total_18
 ```
 
 
-### Memo as of Saturday December 2nd. 
+### FINAL PITCH MEMO 
 
-Hey Derek! We've been having a time with this data set. It is really complex, with a lot of columns that appear to say very similar things. We have had to do extensive cleaning and filtering beyond that to have a data set that is accurate enough to answer questions but small/concise enough to be manageable and run code quickly. We hit some real snags as well around trying to group by dates, since at a certain point it hit us that an office may change hands when a new rep is sworn in in late January. That lead to the creation of a column called office_year which was extracted from the name of the office, and we're using that value to determine the legislative year of the expense. Not all rows (eg the subtotal rows) have start and end date values populated which is why we couldn't extract year from those cols instead, and most years don't have a pre-defined leg year column already.
-
-We're also struggling right now with figuring out the average compensation for congressional staffers. Not every staffer was paid throughout the duration of an office year. For example, there's a staff assistant's record that only pertains to 2022-05-02 through 2022-06-30, while other records pertain to a full quarter. This could be for a variety of reasons -- hires or resignations mid-quarter, staff moving from the "official" side to the "campaign" side during an election year, etc.
-
-We tried to account for this by standardizing the "amount" values. We used the start date and end date of each expense to calculate how many days of a staffer's salary the expense covers. We then divided the "amount" col by that number of days, and then multiplied it by 91.25 (365/4). Those numbers won't be 100% accurate vs their real salaries, but we hoped would get us within spitting distance and serve as a pretty rough estimate of what their quarterly (and then annual) salary would be.
-
-However, trying to calculate averages for staffers using detail-level data still presented several challenges. Chief among them: it's hard to identify which records or job titles are permanent staff positions vs temporary, contract, etc. expenses without manually checking each of the hundreds of grouped values in the "purpose" column, seeing which dates and frequencies they appear, and then using best judgement/assumptions to further standardize or filter. We weren't feeling confident in the likelihood that the results would be accurate due to all of the factors above.
-
-As an alternate method, we thought about just looking at a percent change in staff salaries year over year and comparing that to national trends in wage growth. However, that would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
-
-After doing further reading, even the Congressional Research Service has highlighted the difficulty and data concerns they ran into when trying to use publicly available data to perform similar calculations to ours. They ultimately had to rely on LegiStorm data, and even then listed quite a number of "data concerns" that likely affect the accuracy of their own findings. Here's the report: https://crsreports.congress.gov/product/pdf/R/R44323
-
-Amidst all the chaos, we were still able to find out some pretty interesting trends. One is that when we were comparing spending among DMV representatives during COVID to other years, we found that travel went down, but supplies and materials increased. Printing and reproduction increased dramatically post-COVID, particularly in 2022, where there was a huge spike. We don't have complete 2023 data, but if we did, it would be interesting to see if that category is still rising at the same rate. Franked mail goes up and down every year, going up specifically in 2018, 2020 and 2022. We think this may have something to do with those being election years.
-
-We were also shocked to see that Maryland Rep. Kweisi Mfume spent so little in 2020, with only $729,418.30 in 2020, however we came to find out that he was swore in in May as the replacement for Rep. Cummings who passed away the year before. So the actual lowest annual spender is Rep. Don Beyer with $986,166.50 in 2018.
-
-Overall, this is a real pain to deal with. It's almost like Congress wants us to stay out of it! 
