@@ -30,6 +30,7 @@ library(tidyverse)
 library(readr)
 library(scales)
 library(janitor)
+library(ggplot2)
 
 ```
 
@@ -460,6 +461,51 @@ category_by_year |>
        y="Amount Spent",
        title="TRAVEL",
        caption="source: ProPublica")
+
+```
+We wanted to create a line graph showing the trends over time of all 9 spending categories. We weren't sure how to code that so we asked ChatGPT for help, "I am working in R and using ggplot to visualize a dataset called category_by_year The columns are office_year, purpose and total_spend. I want to create a line graph where the x axis is office_year, the y axis is the  total_spend and there is a line representing each of the nine different values that appear in the purpose column. Write me that code."
+ 
+It said, "Certainly! You can use ggplot2 in R to create a line graph with separate lines for each unique value in the 'purpose' column. Here's an example code to achieve this:
+
+library(ggplot2)
+
+# Ensure 'office_year' is in the correct format
+category_by_year$office_year <- as.factor(category_by_year$office_year)
+
+# Create the plot
+ggplot(category_by_year, aes(x = office_year, y = total_spend, group = purpose, color = purpose)) +
+  geom_line() +
+  labs(x = "Office Year", y = "Total Spend", title = "Total Spend by Purpose over Years") +
+  theme_minimal()" 
+
+
+```{r}
+
+# Plot all lines together. 
+
+# Ensure 'office_year' is in the correct format
+category_by_year$office_year <- as.factor(category_by_year$office_year)
+
+# Create the plot
+ggplot(category_by_year, aes(x = office_year, y = total_spend, group = purpose, color = purpose)) +
+  geom_line() +
+  labs(x = "Office Year", y = "Total Spend", title = "Total Spend by Purpose over Years") +
+  theme_minimal()
+
+# Remove Personnel Compensation to better view the other 8 expense categories. 
+
+category_by_year_8 <- category_by_year |> 
+  filter(purpose != "PERSONNEL COMPENSATION TOTALS:")
+
+# Ensure 'office_year' is in the correct format
+category_by_year_8$office_year <- as.factor(category_by_year_8$office_year)
+
+# Create the plot
+ggplot(category_by_year_8, aes(x = office_year, y = total_spend, group = purpose, color = purpose)) +
+  geom_line() +
+  labs(x = "Office Year", y = "Total Spend", title = "Total Spend by Purpose over Years") +
+  theme_minimal()
+
 ```
 
 An interesting result is that the printing and reproduction category increased a lot in 2022. Is this a Congress-wide change or is it just in the DMV?
