@@ -664,7 +664,7 @@ Let's select and plot just a few roles' averages against national wage growth da
 # get a df with avg annual pay for leg aides, press secs, and schedulers (for job titles ONLY described as schedulers, none with dual roles)
 
 cleaned_details_dmv_staff_pay <- cleaned_details_dmv_staff_pay %>%
-  filter(purpose == "SCHEDULER" | purpose == "LEGISLATIVE AIDE" | purpose == "PRESS SECRETARY") %>%
+  filter(purpose == "SCHEDULER" | purpose == "LEGISLATIVE AIDE" | purpose == "PRESS SECRETARY" | purpose == "CHIEF OF STAFF" | purpose == "LEGISLATIVE DIRECTOR") %>%
   rename("job_title" = "purpose",
          "year" = "office_year") %>%
   arrange(year)
@@ -696,14 +696,12 @@ wage_comparison_df
 ggplot(wage_comparison_df, aes(x = year, y = avg_salary, color = job_title)) +
   geom_line() +
   geom_point() +
-  labs(title = "Leg. aide wages remain far behind national average",
+  labs(title = "Leg. aide wages remain behind national average",
        x = "Year",
        y = "Average Salary",
        color = "Job Title") +
   theme_minimal()
 ```
-
-(I'll update "national_wages" later so it has a label that matches the format of the other job titles)
 
 Let's try to switch gears and just look at a percent change in staff salaries year over year using subtotal records, and compare that to national trends in wage growth. However, the accuracy of those calculations would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
 
@@ -766,9 +764,12 @@ print(ggplot())
 
 Many reps appear to be maximizing this line item, which makes sense to us. We did find a curious outlier. In 2019, Rep. John Carter from Texas spent $29,813.33 on interns, above the apparent ceiling of $20K. We could not figure out why that may be with the information in the dataset, and think it could deserve a closer look via other reporting methods outside of R. 
 
-Strangely, we didn't find any Intern Allowances for 2018 when searching by program == INTERN ALLOWANCES. That couldn't be right, so we searched by the purpose column instead and voilà. So the house must have made a change in FY19 around how intern expenses were categorized in these reports. Strangely, the amount that reps spend on interns in 2018 appeared to vary widely and one rep, Thomas Massie from Kentucky, spend upwards of $43K on interns that year. In 2018 a total of 11 reps sepnd over $20K on interns, which would become the spending apparent cap on intern pay in the following year. 
+Strangely, we didn't find any Intern Allowances for 2018 when searching by program == INTERN ALLOWANCES. That couldn't be right, so we searched by the purpose column instead and voilà. So the house must have made a change in FY19 around how intern expenses were categorized in these reports. Strangely, the amount that reps spend on interns in 2018 appeared to vary widely and one rep, Thomas Massie from Kentucky, spent upwards of $43K on interns that year. In 2018 a total of 11 reps spend over $20K on interns, which would become the spending apparent cap on intern pay in the following year. 
 
 ```{r}
+# We were messing with house_spend_18_22 earlier so lets revert back to the original df
+
+house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
 
 intern_allowances <- house_spend_18_22 |> 
   filter(program== "INTERN ALLOWANCES") |> 
@@ -859,6 +860,31 @@ massie_total_18
 # Fascinating. Now we see that in 2018 reps such as Thomas Massie (R-KY) spent over $43K on interns. That's a lot higher! The House must have cracked down on paid intern spend after that year, it would be really interesting to figure out what happened. 
 
 ```
+
+Are any offices spending significantly LESS than their allotted budget for interns? (Only interested in 2019 onward since offices had NO dedicated intern budget in 2018)
+
+```{r}
+intern_allowances <- house_spend_18_22 |> 
+  filter(program== "INTERN ALLOWANCES") |> 
+  filter(purpose == "INTERN ALLOWANCES TOTALS:") |> 
+  select(-start_date, -end_date, -sort_sequence, -purpose, -year, -fiscal_year_or_legislative_year)
+
+intern_allowances |> 
+  group_by(bioguide_id, office_year) |> 
+  summarise(annual_intern_spend = sum(amount))|> 
+  arrange(annual_intern_spend)
+
+```
+
+One in five offices are spending 10k or less on intern allowances despite having at least 20k to spend. This is really surprising since there's no shortage of college students competing for a Hill internship, and you'd think that member offices would want to take advantage of a dedicated fund for additional labor as much as possible.
+
+The smallest amount in the data belongs to GILBERT RAY CISNEROS  JR (C001123), only spent $46.16 on intern allowances in 2021. This makes sense because he was defeated in the 2020 election and only had a handful of days in office in 2021.
+
+However, there are also people like STEVE CHABOT (C000266) who simply spent very small amounts of their intern allowance budgets.
+
+BILL PASCRELL  JR. (P000096) is another one of those low spenders and unlike Chabot, he's still in office. At least nowadays, he also has an active internship application page, so I'm going to guess that this isn't simply a matter of them not accepting any interns. Diving into the detail level data, the INTERN ALLOWANCE TOTALS: seem to capture all spending -- I opened up spend_with_member_info, filtered the bioguide_id by Pascrell's ID, and used the search bar to search ALL columns for "intern" and I don't think any more intern pay is hiding somewhere else.
+
+This might be worth looking into further, calling Pascrell's office, and trying to understand it better. Is there an issue with the data and/or are we looking at it wrong? Or for some reason are certain offices like Pascrell's disregarding the time honored tradition of recruiting interns to sort mail from constituents? If so, why?
 
 
 ### FINAL PITCH MEMO 
