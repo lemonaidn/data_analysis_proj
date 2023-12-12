@@ -822,20 +822,58 @@ totals_members_personnel_spend <- house_spend_18_22 %>%
   filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
          program == "OFFICIAL EXPENSES OF MEMBERS") %>%
   filter(office_year >= 2018) %>%
-  group_by(office_year, bioguide_id, office) %>%
+  group_by(office_year, bioguide_id) %>%
   summarise(amount = sum(amount)) %>%
   arrange(office_year, amount)
 
 totals_members_personnel_spend
 
 ```
-Some of the lower totals here (eg SUSAN WILD and MARY GAY SCANLON in 2018) seem to be because the member hadn't taken office yet. That's somewhat interesting and surprising in its own right -- there are some members spending taxpayer money before they're even sworn into office.
+
+```{r}
+# Compare annual personnel expenses for each member against the avg personnel spend for all members for each year
+
+members_annual_personnel_spend <- house_spend_18_22 %>%
+  filter(!is.na(bioguide_id)) %>%
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
+         program == "OFFICIAL EXPENSES OF MEMBERS",
+         office_year >= 2018) %>%
+  group_by(bioguide_id, office_year) %>%
+  summarise(annual_personnel_expenses = sum(amount))
+
+members_annual_personnel_spend
+```
+
+```{r}
+# Calculate the average spend across all members each year
+house_average_personnel_expenses <- members_annual_personnel_spend %>%
+  group_by(office_year) %>%
+  summarize(house_avg_personnel_expenses = mean(annual_personnel_expenses))
+
+# join the original data frame with the calculated averages
+members_annual_personnel_spend <- left_join(members_annual_personnel_spend, house_average_personnel_expenses, by = 'office_year')
+
+members_annual_personnel_spend
+
+# Filter rows where annual_personnel_expenses is lower than the average
+lower_personnel_spenders <- members_annual_personnel_spend %>%
+  filter(annual_personnel_expenses < house_avg_personnel_expenses) %>%
+  arrange(annual_personnel_expenses)
+
+
+lower_personnel_spenders
+```
+
+Some of the lower totals here (eg SUSAN WILD and MARY GAY SCANLON in 2018) seem to be because the member hadn't taken office yet. That's somewhat interesting and surprising in its own right -- there are some members spending taxpayer money before they're even sworn into office?
 
 Others like KEVIN HERN and MICHAEL CLOUD were appointed or won special elections mid-cycle.
 
 Others like TROY BALDERSON and JOHN R. CURTIS seem to have multiple bioguide_ids that we didn't catch in our earlier cleaning. Upon further investigation, this is an issue within the original expenses data. For example, LINDA T. SANCHEZ only has one bioguide_id in the ppcong data across all relevant years but for unknown reasons she has two different ids within the same years in the expenses data. We didn't catch this because we checked for bioguide_id issues based on whether any members didn't receive an id during the join of those two data sets, which didn't happen here. If we had time we would go back and examine this further, fix the issue(s), and rerun.
 
-Of the members for whom we didn't identify complicating factors that might explain their low personnel expenses, TED BUDD in 2018 is an example of someone who simply seems to have paid relatively very little on personnel expenses. It would be worth digging into this further outside the data and seeing if Budd experienced higher staff turnover than most offices if his staff pay was so much lower
+Of the members for whom we didn't identify complicating factors that might explain their low personnel expenses, TED BUDD (B001305) in 2018 is an example of someone who simply seems to have spent relatively very little on personnel expenses. He only spent 596,056.30 vs a House-wide average of 910,555.90 that year. It would be worth digging into this further outside the data and seeing if Budd, and other members like him who spend much less on personnel, experienced higher staff turnover than most offices if his staff pay was so much lower and/or if he maintained a smaller staff.
+
+
+Another supposedly low spender, Pat Tiberi, caught my eye:
 
 ```{r}
 spend_with_member_info %>%
@@ -856,7 +894,7 @@ spend_with_member_info %>%
 
 ```
 
-Look at the start and end dates -- why are there expenses in September, MONTHS after he left office? Some of them seem like contractual obligations like rent, but why are personnel expenses still being paid, franked mail being spent?... I was wondering if district staff might stay on to support constituents until the seat is filled, but these expenses include pay for Hill staff too (like Chief of Staff, Deputy Chief of Staff, Legislative Assistant, etc.)
+Look at the start and end dates -- why are there expenses in September, MONTHS after he left office, and some even after the seat was filled by a new person? Some of the expenses seem like contractual obligations like rent, but why are personnel expenses still being paid, franked mail being sent?... I was wondering if district staff might stay on to support constituents until the seat is filled, but these expenses include pay for Hill staff too (like Chief of Staff, Deputy Chief of Staff, Legislative Assistant, etc.)
 
 
 ### Question 6: What's up with Intern Allowances? 
