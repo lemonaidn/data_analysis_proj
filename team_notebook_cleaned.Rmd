@@ -706,16 +706,17 @@ ggplot(wage_comparison_df, aes(x = year, y = avg_salary, color = job_title)) +
 Let's try to switch gears and just look at a percent change in staff salaries year over year using subtotal records, and compare that to national trends in wage growth. However, the accuracy of those calculations would rely on a big assumption that the level of staffing has stayed constant and offices have not grown or shrunk year-to-year.
 
 ```{r}
-# calculate annual % change in personnel expenditures for DMV reps
+# calculate % change in personnel expenditures since 2018 for DMV reps
 
 totals_dmv_spend_pct_change <- totals_dmv_spend %>%
   filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
          program == "OFFICIAL EXPENSES OF MEMBERS") %>%
-  group_by(year) %>%
+  filter(office_year >= 2018) %>%
+  group_by(office_year) %>%
   summarise(amount = sum(amount)) %>%
-  # I got ChatGPT's help with this last step since I wasn't familiar with the "lag" function:
-  mutate(pct_change = (amount - 18276024) / 18276024 * 100) %>%
-  mutate(data_source = "Personnel Expenditure Subtotals")
+  # 2018's amount was 18388218.1, so each year's percent growth should be calculate off of that number to get cumulative growth since 2018
+  mutate(pct_change = (amount - 18388218.1) / 18388218.1 * 100) %>%
+  mutate(data_source = "DMV Personnel Expenditure Subtotals")
 
 totals_dmv_spend_pct_change
 ```
@@ -735,18 +736,21 @@ national_wages_pct_change
 ```{r}
 # bind the data
 
+national_wages_pct_change <- national_wages_pct_change %>%
+  rename("office_year" = "year")
+
 wage_comparison_pct_change_df <- rbind(totals_dmv_spend_pct_change, national_wages_pct_change) %>%
-  arrange(year)
+  arrange(office_year)
 
 wage_comparison_pct_change_df
 ```
 ```{r}
 # visualize
 
-ggplot(wage_comparison_pct_change_df, aes(x = year, y = pct_change, color = data_source, group = data_source)) +
+ggplot(wage_comparison_pct_change_df, aes(x = office_year, y = pct_change, color = data_source, group = data_source)) +
   geom_line() +
   geom_point() +
-  labs(title = "Growth in House Staff Pay Outpaces National Trends",
+  labs(title = "Growth in DMV Personnel Pay Outpaces National Trends",
        x = "Year",
        y = "Percent Change vs 2018",
        color = "") +
@@ -755,6 +759,105 @@ ggplot(wage_comparison_pct_change_df, aes(x = year, y = pct_change, color = data
 # Display the plot
 print(ggplot())
 ```
+
+Growth in total personnel expenses for DMV representatives is outpacing wage growth, with an even bigger gap by 2022. What about if we consider all member offices nationally?
+
+```{r}
+# We were directly modifying/updating house_spend_18_22 earlier so lets revert back to the original df
+
+house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
+
+
+# calculate % change in personnel expenditures since 2018 for DMV reps
+
+totals_house_spend_pct_change <- house_spend_18_22 %>%
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
+         program == "OFFICIAL EXPENSES OF MEMBERS") %>%
+  filter(office_year >= 2018) %>%
+  group_by(office_year) %>%
+  summarise(amount = sum(amount)) %>%
+  # 2018's amount was 412062623, so each year's percent growth should be calculated off of that number to get cumulative growth since 2018
+  mutate(pct_change = (amount - 412062623) / 412062623 * 100) %>%
+  mutate(data_source = "National Personnel Expenditure Subtotals")
+
+totals_house_spend_pct_change
+```
+
+bind and re-plot alongside the dmv personnel growth and national wage growth data
+
+```{r}
+
+full_wage_comparison_pct_change_df <- rbind(totals_dmv_spend_pct_change, national_wages_pct_change, totals_house_spend_pct_change) %>%
+  arrange(office_year)
+
+full_wage_comparison_pct_change_df
+
+```
+
+
+```{r}
+# visualize
+
+ggplot(full_wage_comparison_pct_change_df, aes(x = office_year, y = pct_change, color = data_source, group = data_source)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "",
+       x = "Year",
+       y = "Percent Change vs 2018",
+       color = "") +
+  theme_minimal()
+
+# Display the plot
+print(ggplot())
+```
+Very similar trends as the DMV's.
+
+Since different members were present for during different, minimum salary requirements were set for the first time in late 2022, and maximum allowable salary levels were increased, we can't make a direct comparison of salary growth across ALL years for representatives who served (for example) from 2017-2019 vs representatives who served from 2017-2023.
+
+But out of all offices nationally, are there any offices whose spending on personnel expenses lag far behind the national trends for particular years?
+
+```{r}
+
+totals_members_personnel_spend <- house_spend_18_22 %>%
+  filter(purpose == "PERSONNEL COMPENSATION TOTALS:",
+         program == "OFFICIAL EXPENSES OF MEMBERS") %>%
+  filter(office_year >= 2018) %>%
+  group_by(office_year, bioguide_id, office) %>%
+  summarise(amount = sum(amount)) %>%
+  arrange(office_year, amount)
+
+totals_members_personnel_spend
+
+```
+Some of the lower totals here (eg SUSAN WILD and MARY GAY SCANLON in 2018) seem to be because the member hadn't taken office yet. That's somewhat interesting and surprising in its own right -- there are some members spending taxpayer money before they're even sworn into office.
+
+Others like KEVIN HERN and MICHAEL CLOUD were appointed or won special elections mid-cycle.
+
+Others like TROY BALDERSON and JOHN R. CURTIS seem to have multiple bioguide_ids that we didn't catch in our earlier cleaning. Upon further investigation, this is an issue within the original expenses data. For example, LINDA T. SANCHEZ only has one bioguide_id in the ppcong data across all relevant years but for unknown reasons she has two different ids within the same years in the expenses data. We didn't catch this because we checked for bioguide_id issues based on whether any members didn't receive an id during the join of those two data sets, which didn't happen here. If we had time we would go back and examine this further, fix the issue(s), and rerun.
+
+Of the members for whom we didn't identify complicating factors that might explain their low personnel expenses, TED BUDD in 2018 is an example of someone who simply seems to have paid relatively very little on personnel expenses. It would be worth digging into this further outside the data and seeing if Budd experienced higher staff turnover than most offices if his staff pay was so much lower
+
+```{r}
+spend_with_member_info %>%
+  filter(bioguide_id == "T000462",
+         category == "PERSONNEL COMPENSATION")
+
+```
+
+PATRICK J. TIBERI was only in office for 15 days in 2018 but somehow still managed to spend nearly 500k in personnel expenses?? We need to examine the details of that further:
+
+```{r}
+
+spend_with_member_info %>%
+  filter(office_year == 2018) %>%
+  filter(bioguide_id == "T000462") %>%
+  filter(start_date > "2018-01-15")
+  
+
+```
+
+Look at the start and end dates -- why are there expenses in September, MONTHS after he left office? Some of them seem like contractual obligations like rent, but why are personnel expenses still being paid, franked mail being spent?... I was wondering if district staff might stay on to support constituents until the seat is filled, but these expenses include pay for Hill staff too (like Chief of Staff, Deputy Chief of Staff, Legislative Assistant, etc.)
+
 
 ### Question 6: What's up with Intern Allowances? 
 
@@ -767,9 +870,6 @@ Many reps appear to be maximizing this line item, which makes sense to us. We di
 Strangely, we didn't find any Intern Allowances for 2018 when searching by program == INTERN ALLOWANCES. That couldn't be right, so we searched by the purpose column instead and voilà. So the house must have made a change in FY19 around how intern expenses were categorized in these reports. Strangely, the amount that reps spend on interns in 2018 appeared to vary widely and one rep, Thomas Massie from Kentucky, spent upwards of $43K on interns that year. In 2018 a total of 11 reps spend over $20K on interns, which would become the spending apparent cap on intern pay in the following year. 
 
 ```{r}
-# We were messing with house_spend_18_22 earlier so lets revert back to the original df
-
-house_spend_18_22 <- read_csv("data/house_spend_18_22.csv")
 
 intern_allowances <- house_spend_18_22 |> 
   filter(program== "INTERN ALLOWANCES") |> 
