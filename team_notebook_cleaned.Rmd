@@ -1027,3 +1027,45 @@ This might be worth looking into further, calling Pascrell's office, and trying 
 
 ### FINAL PITCH MEMO 
 
+Our data analysis of expenditure reports from the House of Representatives between 2018 and 2022 yielded several newsworthy findings that merit further investigation. The public deserves a transparent accounting of their representatives’ budgets, yet the publicly-available data requires careful cleaning and diligent examination to uncover trends and outliers. Continued reporting on this subject would serve public interest by increasing transparency and holding elected officials accountable for their spending. 
+
+** Findings ** 
+
+There appears to be an anomaly in the data regarding expenses from the office of Rep. Patrick J. Tiberi (R-OH). Tiberi resigned from the House on Jan. 15, 2018, and his seat was filled on Sept. 5, 2018. However, he has expense records until at least Sept. 17, 2018. Some seem like contractual obligations like rent, but why are personnel expenses still being paid, franked mail being spent, etc.? We wondered if the expenses could be explained if district staff stayed to support constituents for a short time after vacancy, but these expenses also include pay for Hill staff too (like Chief of Staff, Deputy Chief of Staff, Legislative Assistant, etc.) Were these expenses incorrectly attributed to Tiberi in the data? If not, how and why was his office able to continue spending taxpayer dollars well beyond the end of his tenure?
+
+We also uncovered patterns related to intern compensation in the House. Representatives’ spending on intern allowances varied widely in 2018, but shifted to strict pay ceilings from 2019-2022. In 2019, intern spending was capped at $20,000 annually per office, which increased to $25,000 in 2020 and $35,000 in 2022. We found one outlier to the intern spending trends. In 2018, Rep. John Carter (R-TX) spent more than $29,000 on interns, vastly outspending his peers who didn’t cross the threshold of $20,000.
+
+Additionally, there are instances where certain members appeared to spend significantly less on personnel expenses than their peers. Of the members for whom we didn't identify complicating factors that might explain their low personnel expenses (e.g. resignations, special elections mid-cycle, etc.), Rep. Ted Budd (R-NC) in 2018, for example, simply seems to have spent relatively very little on personnel expenses. He only spent $596,056.30 on personnel vs a House-wide average of $910,555.90 that year. . It would be worth digging into this further outside the data and seeing if Budd experienced higher staff turnover than most offices due to his staff pay being lower (or his staff possibly being much smaller than average instead).
+
+We sought to find local stories by focusing on representatives from DC, Maryland and Virginia. We found, as expected, that reps from the DMV spent less overall than their colleagues due to proximity to the capital. Even though DMV reps spent relatively more on staff compensation and rent and utilities, their significantly smaller spend on travel reduced their overall spending. 
+
+We also looked into spending by party for DMV reps to determine whether Democrats or Republicans spent more annually, and whether the majority party members spent more or less. We did not find a strong correlation in the data and would not pursue this question further in our reporting. 
+
+We also looked at spending over time for DMV reps, and we found that spending for travel dropped significantly in 2020 likely due to the pandemic. In addition, we also found that spending on franked mail was higher every other year (2018, 2020 and 2022), potentially due to those being election years. Personnel compensation was also on a steady rise over the last five years in conjunction with wages increases in general in the U.S.
+
+One statistic that caught our eye was the printing and reproduction expenses. They seem to have skyrocketed from 2021 to 2022, with an over $26 million increase. Upon further analysis, we found that the highest amount of the money went towards frankable printing and advertising. This could be down to 2022 being an election year, however, there wasn’t a huge difference between 2018 and 2019, with 2018 also being an election year. What makes 2022 different? This could be something to investigate further.
+
+
+
+** Verification & Next Steps ** 
+
+To look more closely into the intern spending for Rep. John Carter (R-TX), we would look online and potentially make a FOIA request to see his detailed 2018 budget. We could also cross-check the original expense data from ProPublica against data available through house.gov (https://www.house.gov/the-house-explained/open-government/statement-of-disbursements) or private organizations that collect similar data like LegiStorm. We would reach out to Carter or his Chief of Staff for comment . Interviews with former interns could also help to paint a clearer picture of how Carter used intern labor. 
+
+We could apply similar steps to verify the rules regarding an office continuing to spend taxpayer money even after the member has resigned and the seat has been filled by another person. We would also want to explore the data further (and/or investigate outside the data) to see if there are any similar instances of an office continuing to spend official funds long after the member has vacated the seat and even after the seat has been filled by someone else. 
+
+If the data is verified, we could confirm the rules on intern spending and post-resignation spending with relevant oversight bodies in the House to determine whether the relevant offices broke any rules.
+
+We would want to find additional data and conduct interviews with members who spent less on personnel expenses to understand why, whether that equated to lower pay for staff members or a smaller staff pool, and whether those factors affected staff turnover. That could rabbit-hole even further – for example, if it affects turnover, does that in turn affect a member’s work output, i.e. fewer sponsored bills or poor response time to constituent calls and letters?
+
+To determine why DMV reps are spending more on salaries and rent, we could also FOIA detailed office budgets for each representative. Perhaps the variance can be attributed to the cost of living and commercial real estate market in the DMV alone, but it’s possible there is something more to uncover.
+
+We could also do something similar in order to better understand why House reps spent significantly more on printing and reproduction in 2022 in comparison to other years. Did it have anything to do with the midterm elections? If so, how have methods of communicating with voters changed over the last five years? These would be questions we’d ask members.
+
+** Data Strengths & Weaknesses ** 
+
+The most significant weaknesses in the data pertain to personnel expenses. First, there are inconsistent expense dates for staff members. These observations could be for a variety of reasons -- hires or resignations mid-quarter, staff moving from House to the campaign trail during an election year, etc. We standardized the data to estimate a rough annualized salary for all recipients of personnel expenses. But that process also means that recipients of large one-time or short-term payments (likely temps or contractors) look like they’ve received much more than they actually did.
+
+Additionally, some job titles suggest dual roles for certain staffers. For example, some schedulers might just be schedulers, while others are both scheduler/press assistant or scheduler/deputy communications director. This made it difficult to compare staff pay for the same or similar roles across individual offices.
+
+Finally, some members were assigned multiple unique identifiers called bioguide ids within the original expense data. Those members’ subtotal records are split up across multiple rows within the same year, which would impact the findings of any analysis that relies on grouping data by those unique identifiers. This appears to be an error, but further reporting may reveal why a representative was assigned multiple bioguide ids
+
